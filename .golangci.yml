@@ -1,0 +1,50 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - revive
+    - prealloc
+  settings:
+    revive:
+      rules:
+        - name: exported
+          severity: warning
+        - name: unused-parameter
+          severity: warning
+    errcheck:
+      exclude-functions:
+        - (io.Closer).Close
+        - (*net.Conn).Close
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Printf
+        - fmt.Println
+  exclusions:
+    rules:
+      - linters:
+          - errcheck
+        text: "Error return value of `resp\\.Body\\.Close"
+      - linters:
+          - errcheck
+        text: "Error return value of `fResp\\.Body\\.Close"
+      - linters:
+          - errcheck
+        text: "Error return value of `conn\\.Close"
+      - linters:
+          - revive
+        text: "exported .* should have comment"
+      - linters:
+          - revive
+        text: "stutters; consider calling this"
+    presets:
+      - comments

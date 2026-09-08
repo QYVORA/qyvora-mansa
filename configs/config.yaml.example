@@ -1,0 +1,48 @@
+# Mansa configuration file (YAML).
+#
+# Mansa searches for "config.yaml" in, in order:
+#   1. the current working directory
+#   2. ~/.qyvora-mansa/
+#   3. ~/.config/qyvora/mansa/
+#   4. /etc/qyvora-mansa/
+# or you can point at an explicit file with a flag where supported.
+#
+# Every key can be overridden by an environment variable with the prefix
+# QYVORA_MANSA_ and dots/dashes replaced by underscores, for example:
+#   QYVORA_MANSA_WIRELESS_INTERFACE=wlan0
+#   QYVORA_MANSA_REPORT_FORMAT=json
+
+# Authorization must be confirmed before live (non-simulated) assessment.
+# Keep this false unless you are running Mansa on networks you own; use
+# `--authorized`/`-y` per-run or `authorize` inside the console instead.
+authorized: false
+
+# Default output format when no flag is passed: terminal | json | yaml | markdown | html.
+output: terminal
+
+verbose: false
+quiet: false
+
+report:
+  # Directory used when a report has no explicit --out path.
+  dir: reports
+  format: terminal
+
+session:
+  # Directory for <id>.session.json files. Empty = ./sessions.
+  dir: ""
+
+log:
+  # Level of structured logging: debug | info | warn | error.
+  level: info
+
+wireless:
+  # Default interface selected when none is passed on the command line.
+  interface: ""
+  # Per-scan dwell time in seconds.
+  timeout_seconds: 30
+
+analysis:
+  # Minimum confidence a finding must reach to be reported:
+  # possible | probable | observed | confirmed.
+  confidence_threshold: medium

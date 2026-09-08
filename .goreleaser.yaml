@@ -1,0 +1,56 @@
+# GoReleaser configuration for Mansa.
+# Docs: https://goreleaser.com
+version: 2
+
+project_name: mansa
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: mansa
+    main: .
+    binary: mansa
+    ldflags:
+      - -s -w -X github.com/QYVORA/qyvora-mansa/internal/version.Version={{ .Version }}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+# Publish bare binaries matching the self-update artifact naming:
+#   mansa-linux-amd64, mansa-linux-arm64,
+#   mansa-macos-amd64, mansa-macos-arm64,
+#   mansa-windows-amd64.exe, mansa-windows-arm64.exe
+archives:
+  - id: binary
+    format: binary
+    name_template: >-
+      mansa-{{ if eq .Os "darwin" }}macos{{ else }}{{ .Os }}{{ end }}-{{ .Arch }}{{ if eq .Os "windows" }}.exe{{ end }}
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  github:
+    owner: QYVORA
+    name: qyvora-mansa
+  footer: |
+    Full documentation: https://github.com/QYVORA/qyvora-mansa#readme
+    Verify downloads against checksums.txt.
