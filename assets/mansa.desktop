@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=MANSA
+GenericName=Wireless Security Assessment Framework
+Comment=Authorized wireless security assessment, WLAN security analysis, and evidence-driven reporting
+Exec=@PREFIX@/bin/mansa
+Icon=@PREFIX@/share/icons/hicolor/512x512/apps/mansa.png
+Terminal=true
+Categories=Development;Security;Utility;
+Keywords=wireless;wlan;wifi;security;assessment;analysis;scan;pentest;
