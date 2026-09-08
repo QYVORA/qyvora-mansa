@@ -1,0 +1,41 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Build output
+bin/
+dist/
+releases/
+
+# Test coverage
+*.out
+coverage.txt
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Session and report directories (created at runtime)
+sessions/
+reports/
+
+# Temporary files
+*.tmp
+*.bak
+*.update-part
+
+# Go workspace file
+go.work
+
+# Environment files
+.env
+.env.local
