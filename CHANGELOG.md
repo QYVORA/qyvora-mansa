@@ -6,7 +6,15 @@ follows [Semantic Versioning](https://semver.org/) and
 
 ## [Unreleased]
 
+### Changed
+
+- `--dry-run` plan output now routes to stderr when a machine-readable format
+  is active, keeping stdout valid.
+- Reports are written with mode 0600 in a 0700 directory (matching session
+  artifacts) rather than 0644/0750.
+
 ### Added
+
 
 - Full interactive console (REPL) with pipe mode, completion, history,
   contextual prompt, and HUD.

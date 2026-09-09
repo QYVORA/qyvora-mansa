@@ -260,12 +260,18 @@ func (a *AppState) RunPipelineStage(ctx context.Context, t *models.Target, sim b
 }
 
 func (a *AppState) printDryRunPlan(t *models.Target, sim bool) {
-	fmt.Fprintf(os.Stdout, "Dry run plan:\n")
-	fmt.Fprintf(os.Stdout, "  Target:       %s\n", t.DisplayName())
-	fmt.Fprintf(os.Stdout, "  Interface:    %s\n", t.Interface)
-	fmt.Fprintf(os.Stdout, "  Simulation:   %v\n", sim)
-	fmt.Fprintf(os.Stdout, "  Stages:       %s\n", strings.Join(pipeline.StageOrder, " → "))
-	fmt.Fprintf(os.Stdout, "  Backend:      %s\n", a.Backend.Name())
+	// The plan is informational, not machine output: route it to err output
+	// when a machine-readable format is active so stdout stays pure.
+	w := a.Printer.Writer()
+	if a.Printer.Format() != output.FormatTerminal {
+		w = os.Stderr
+	}
+	fmt.Fprintf(w, "Dry run plan:\n")
+	fmt.Fprintf(w, "  Target:       %s\n", t.DisplayName())
+	fmt.Fprintf(w, "  Interface:    %s\n", t.Interface)
+	fmt.Fprintf(w, "  Simulation:   %v\n", sim)
+	fmt.Fprintf(w, "  Stages:       %s\n", strings.Join(pipeline.StageOrder, " → "))
+	fmt.Fprintf(w, "  Backend:      %s\n", a.Backend.Name())
 }
 
 func (a *AppState) writeReport(_ context.Context, sess *models.Session) error {
@@ -273,7 +279,7 @@ func (a *AppState) writeReport(_ context.Context, sess *models.Session) error {
 	if dir == "" {
 		dir = "reports"
 	}
-	_ = os.MkdirAll(dir, 0o750)
+	_ = os.MkdirAll(dir, 0o700)
 	format := a.Cfg.GetString("report.format")
 	if format == "" {
 		format = "terminal"
@@ -287,7 +293,7 @@ func (a *AppState) writeReport(_ context.Context, sess *models.Session) error {
 		return err
 	}
 	path := dir + "/report." + string(f)
-	return os.WriteFile(path, []byte(content), 0o644)
+	return os.WriteFile(path, []byte(content), 0o600)
 }
 
 // AnalyzeSession re-runs the analysis pass (rules, validation, risk) on an
