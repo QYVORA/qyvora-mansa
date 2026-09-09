@@ -205,7 +205,7 @@ func stageEnumerate(ctx context.Context, env *Env) error {
 	return nil
 }
 
-func stageObserve(_ context.Context, env *Env) error {
+func stageObserve(ctx context.Context, env *Env) error {
 	now := models.NewID("obs")
 	for _, ap := range env.Session.AccessPoints {
 		o := models.WirelessObservation{
@@ -220,6 +220,19 @@ func stageObserve(_ context.Context, env *Env) error {
 		if env.Events != nil {
 			env.Events.Info(events.ObservationCollected, map[string]any{
 				"target": ap.BSSID, "key": "ap.signal",
+			})
+		}
+	}
+	traffic, err := env.Backend.Observe(ctx, env.Session.Interface)
+	if err != nil {
+		return fmt.Errorf("observe traffic: %w", err)
+	}
+	env.Session.Traffic = traffic
+	if env.Events != nil {
+		for _, t := range traffic {
+			env.Events.Info(events.TrafficObserved, map[string]any{
+				"target": t.Target, "protocol": t.Protocol,
+				"type": t.Type, "count": t.Count,
 			})
 		}
 	}

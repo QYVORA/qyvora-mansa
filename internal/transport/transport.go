@@ -13,6 +13,7 @@ type Backend interface {
 	Name() string
 	DiscoverInterfaces() ([]models.WirelessInterface, error)
 	Scan(ctx context.Context, iface string, timeout int) ([]models.AccessPoint, []models.Station, error)
+	Observe(ctx context.Context, iface string) ([]models.TrafficObservation, error)
 	Supported() bool
 	Capabilities() []string
 }

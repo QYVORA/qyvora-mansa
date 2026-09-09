@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/QYVORA/qyvora-mansa/internal/wireless"
 	"github.com/QYVORA/qyvora-mansa/pkg/models"
 )
 
@@ -57,6 +58,12 @@ func (b *LinuxBackend) Scan(_ context.Context, iface string, _ int) ([]models.Ac
 	return aps, nil, nil
 }
 
+// Observe reports traffic-level observations. Live capture is not yet
+// implemented without monitor mode; the interface degrades honestly.
+func (b *LinuxBackend) Observe(_ context.Context, _ string) ([]models.TrafficObservation, error) {
+	return nil, nil
+}
+
 func iwAvailable() bool {
 	_, err := exec.LookPath("iw")
 	return err == nil
@@ -93,6 +100,7 @@ func parseIwScan(out string) []models.AccessPoint {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "BSS ") {
 			if current != nil {
+				finalizeAP(current)
 				aps = append(aps, *current)
 			}
 			bssid := strings.TrimPrefix(line, "BSS ")
@@ -102,22 +110,93 @@ func parseIwScan(out string) []models.AccessPoint {
 			bssid = strings.TrimSpace(bssid)
 			current = &models.AccessPoint{BSSID: bssid}
 		} else if current != nil {
-			if strings.HasPrefix(line, "SSID: ") {
+			switch {
+			case strings.HasPrefix(line, "SSID: "):
 				current.SSID = strings.TrimPrefix(line, "SSID: ")
-			} else if strings.HasPrefix(line, "freq: ") {
+			case strings.HasPrefix(line, "freq: "):
 				current.Frequency, _ = strconv.Atoi(strings.TrimPrefix(line, "freq: "))
 				ci := models.FreqToChannel(current.Frequency)
 				current.Channel = ci.Channel
 				current.Band = string(ci.Band)
-			} else if strings.HasPrefix(line, "signal: ") {
+			case strings.HasPrefix(line, "DS Parameter set: channel "):
+				if ch, err := strconv.Atoi(strings.TrimPrefix(line, "DS Parameter set: channel ")); err == nil {
+					current.Channel = ch
+				}
+			case strings.HasPrefix(line, "signal: "):
 				sig := strings.TrimPrefix(line, "signal: ")
 				sig = strings.TrimSuffix(sig, " dBm")
 				current.Signal, _ = strconv.Atoi(sig)
+			case strings.HasPrefix(line, "capability: "):
+				current.Capabilities = strings.TrimPrefix(line, "capability: ")
+				if strings.Contains(current.Capabilities, "Privacy") {
+					current.Security.Enabled = true
+				}
+			case strings.HasPrefix(line, "Group cipher: "):
+				current.Security.GroupCipher = strings.TrimPrefix(line, "Group cipher: ")
+			case strings.HasPrefix(line, "Pairwise ciphers: "):
+				current.Security.PairwiseCiphers = strings.Fields(strings.TrimPrefix(line, "Pairwise ciphers: "))
+			case strings.HasPrefix(line, "Authentication suites: "):
+				current.Security.AKMSuites = strings.Fields(strings.TrimPrefix(line, "Authentication suites: "))
+			case strings.HasPrefix(line, "WPA:") || strings.HasPrefix(line, "RSN:"):
+				current.Security.Enabled = true
+			case strings.Contains(line, "PMF required") || strings.Contains(line, "PMF capable"):
+				current.Security.PMF = true
 			}
 		}
 	}
 	if current != nil {
+		finalizeAP(current)
 		aps = append(aps, *current)
 	}
 	return aps
+}
+
+// finalizeAP derives protocol/cipher fields from the raw RSN data captured
+// by iw and normalizes the security advertisement.
+func finalizeAP(ap *models.AccessPoint) {
+	sec := &ap.Security
+	if sec.Enabled && len(sec.AKMSuites) == 0 && sec.GroupCipher == "" {
+		return
+	}
+	var cipher string
+	switch {
+	case strings.Contains(sec.GroupCipher, "GCMP"):
+		cipher = "GCMP"
+	case strings.Contains(sec.GroupCipher, "CCMP"):
+		cipher = "CCMP"
+	case strings.Contains(sec.GroupCipher, "TKIP"):
+		cipher = "TKIP"
+	}
+	var protocols []string
+	switch {
+	case containsFold(sec.AKMSuites, "SAE"):
+		protocols = []string{"WPA3", "SAE"}
+	case containsFold(sec.AKMSuites, "OWE"):
+		protocols = []string{"OWE"}
+	case containsFold(sec.AKMSuites, "802.1X") || containsFold(sec.AKMSuites, "EAP"):
+		protocols = []string{"WPA2"}
+		sec.Enterprise = true
+	default:
+		protocols = []string{"WPA2"}
+	}
+	if cipher != "" {
+		protocols = append(protocols, cipher)
+	}
+	if len(protocols) > 0 {
+		sec.Protocols = protocols
+		sec.Cipher = cipher
+	}
+	if len(sec.AKMSuites) > 0 {
+		sec.KeyMgmt = strings.Join(sec.AKMSuites, " ")
+	}
+	wireless.NormalizeSecurity(sec)
+}
+
+func containsFold(ss []string, want string) bool {
+	for _, s := range ss {
+		if strings.EqualFold(strings.TrimSpace(s), want) {
+			return true
+		}
+	}
+	return false
 }

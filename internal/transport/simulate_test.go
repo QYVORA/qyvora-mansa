@@ -43,14 +43,16 @@ func TestSimBackendFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("scan: %v", err)
 	}
-	if len(aps) != 16 {
-		t.Errorf("expected 16 access points, got %d", len(aps))
+	if len(aps) != 23 {
+		t.Errorf("expected 23 access points, got %d", len(aps))
 	}
-	if len(stations) != 3 {
-		t.Errorf("expected 3 stations, got %d", len(stations))
+	if len(stations) != 7 {
+		t.Errorf("expected 7 stations, got %d", len(stations))
 	}
 	// The dataset must exercise every security rule.
 	seen := map[string]bool{}
+	hidden := 0
+	transition := 0
 	for _, ap := range aps {
 		for _, p := range ap.Security.Protocols {
 			switch p {
@@ -61,15 +63,39 @@ func TestSimBackendFixture(t *testing.T) {
 		if ap.Security.WPS {
 			seen["WPS"] = true
 		}
+		if ap.Hidden || ap.SSID == "" {
+			hidden++
+		}
+		if ap.Security.Transition {
+			transition++
+		}
 	}
 	for _, want := range []string{"WEP", "WPA", "WPA2", "WPA3", "WPS"} {
 		if !seen[want] {
 			t.Errorf("fixture missing %s coverage", want)
 		}
 	}
+	if hidden == 0 {
+		t.Error("fixture must include a hidden-SSID AP")
+	}
+	if transition == 0 {
+		t.Error("fixture must include a WPA3-transition AP")
+	}
 	// Deterministic interface set.
 	if interfaces[0].Name != "wlan0" {
 		t.Errorf("unexpected first interface: %+v", interfaces[0])
+	}
+	traffic, err := b.Observe(context.Background(), "wlan0")
+	if err != nil {
+		t.Fatalf("observe: %v", err)
+	}
+	if len(traffic) == 0 {
+		t.Error("fixture must supply traffic observations")
+	}
+	for _, tr := range traffic {
+		if tr.Target == "" {
+			t.Errorf("traffic observation missing target: %+v", tr)
+		}
 	}
 }
 

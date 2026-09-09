@@ -327,13 +327,21 @@ func runObserve(c *Console, p *Parsed) error {
 	c.ui.Section("Observed stations")
 	if len(sess.Stations) == 0 {
 		c.printf("  (no stations observed)\n")
-		return nil
+	} else {
+		rows := make([][]string, 0, len(sess.Stations))
+		for _, st := range sess.Stations {
+			rows = append(rows, []string{st.MAC, st.APBSSID, fmt.Sprintf("%d", st.Signal), fmt.Sprintf("%v", st.Associated), strings.Join(st.ProbedSSIDs, ",")})
+		}
+		c.ui.Table([]string{"mac", "ap", "signal", "associated", "probed"}, rows)
 	}
-	rows := make([][]string, 0, len(sess.Stations))
-	for _, st := range sess.Stations {
-		rows = append(rows, []string{st.MAC, st.APBSSID, fmt.Sprintf("%d", st.Signal), strings.Join(st.ProbedSSIDs, ",")})
+	if len(sess.Traffic) > 0 {
+		c.ui.Section("Observed traffic")
+		rows := make([][]string, 0, len(sess.Traffic))
+		for _, t := range sess.Traffic {
+			rows = append(rows, []string{t.Type, t.Protocol, t.Target, t.Detail, fmt.Sprintf("%d", t.Count)})
+		}
+		c.ui.Table([]string{"type", "protocol", "target", "detail", "count"}, rows)
 	}
-	c.ui.Table([]string{"mac", "ap", "signal", "probed"}, rows)
 	return nil
 }
 
