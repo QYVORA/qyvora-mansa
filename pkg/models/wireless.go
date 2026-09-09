@@ -21,32 +21,41 @@ type AccessPoint struct {
 	Security     SecurityAdvertisement `json:"security"`
 	Vendor       string                `json:"vendor,omitempty"`
 	Capabilities string                `json:"capabilities,omitempty"`
+	Hidden       bool                  `json:"hidden,omitempty"`
 	FirstSeen    time.Time             `json:"first_seen"`
 	LastSeen     time.Time             `json:"last_seen"`
 	Source       string                `json:"source,omitempty"`
 	IsSimulated  bool                  `json:"is_simulated,omitempty"`
 }
 
-// Station is a wireless client associated with an AP.
+// Station is a wireless client and its observed behavior.
 type Station struct {
-	MAC         string   `json:"mac"`
-	APBSSID     string   `json:"ap_bssid"`
-	Signal      int      `json:"signal,omitempty"`
-	ProbedSSIDs []string `json:"probed_ssids,omitempty"`
-	Source      string   `json:"source,omitempty"`
+	MAC         string    `json:"mac"`
+	APBSSID     string    `json:"ap_bssid"`
+	Signal      int       `json:"signal,omitempty"`
+	Associated  bool      `json:"associated,omitempty"`
+	ProbedSSIDs []string  `json:"probed_ssids,omitempty"`
+	FirstSeen   time.Time `json:"first_seen,omitempty"`
+	LastSeen    time.Time `json:"last_seen,omitempty"`
+	Source      string    `json:"source,omitempty"`
 }
 
 // SecurityAdvertisement captures the security configuration advertised by an AP.
 type SecurityAdvertisement struct {
-	Enabled    bool     `json:"enabled"`
-	Protocols  []string `json:"protocols,omitempty"`
-	Auth       string   `json:"auth,omitempty"`
-	Cipher     string   `json:"cipher,omitempty"`
-	KeyMgmt    string   `json:"key_mgmt,omitempty"`
-	Mode       string   `json:"mode,omitempty"`
-	Enterprise bool     `json:"enterprise,omitempty"`
-	WPS        bool     `json:"wps,omitempty"`
-	RSNIE      string   `json:"rsnie,omitempty"`
+	Enabled         bool     `json:"enabled"`
+	Protocols       []string `json:"protocols,omitempty"`
+	Auth            string   `json:"auth,omitempty"`
+	Cipher          string   `json:"cipher,omitempty"`
+	KeyMgmt         string   `json:"key_mgmt,omitempty"`
+	Mode            string   `json:"mode,omitempty"`
+	Enterprise      bool     `json:"enterprise,omitempty"`
+	WPS             bool     `json:"wps,omitempty"`
+	PMF             bool     `json:"pmf,omitempty"`
+	GroupCipher     string   `json:"group_cipher,omitempty"`
+	PairwiseCiphers []string `json:"pairwise_ciphers,omitempty"`
+	AKMSuites       []string `json:"akm_suites,omitempty"`
+	Transition      bool     `json:"transition,omitempty"`
+	RSNIE           string   `json:"rsnie,omitempty"`
 }
 
 // WirelessObservation is a single observation of a wireless element.
@@ -70,5 +79,6 @@ type TrafficObservation struct {
 	Target     string    `json:"target"`
 	Protocol   string    `json:"protocol,omitempty"`
 	Detail     string    `json:"detail,omitempty"`
+	Count      int       `json:"count,omitempty"`
 	ObservedAt time.Time `json:"observed_at"`
 }

@@ -28,6 +28,7 @@ type Context struct {
 	APs          []models.AccessPoint
 	Stations     []models.Station
 	Observations []models.WirelessObservation
+	Traffic      []models.TrafficObservation
 }
 
 // NewContext creates a Context from a session.
@@ -37,6 +38,7 @@ func NewContext(sess *models.Session) *Context {
 		APs:          sess.AccessPoints,
 		Stations:     sess.Stations,
 		Observations: sess.Observations,
+		Traffic:      sess.Traffic,
 	}
 }
 

@@ -1,6 +1,7 @@
 package builtin
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -26,7 +27,12 @@ func testAP(bssid, ssid string, ch int, band string, sig int, sec models.Securit
 
 func runAllRules(t *testing.T, aps []models.AccessPoint) []models.Finding {
 	t.Helper()
-	ctx := &rules.Context{APs: aps}
+	return runAllRulesFull(t, aps, nil, nil)
+}
+
+func runAllRulesFull(t *testing.T, aps []models.AccessPoint, sts []models.Station, tr []models.TrafficObservation) []models.Finding {
+	t.Helper()
+	ctx := &rules.Context{APs: aps, Stations: sts, Traffic: tr}
 	var all []models.Finding
 	for _, r := range All() {
 		for _, f := range r.Detect(ctx) {
@@ -113,10 +119,61 @@ func TestAllBuiltinRulesFire(t *testing.T) {
 
 	got := findingsByRule(t, aps)
 	for _, rule := range []string{"WLAN-001", "WLAN-002", "WLAN-003", "WLAN-004", "WLAN-005", "WLAN-006",
-		"WLAN-010", "WLAN-011", "WLAN-012", "WLAN-020", "WLAN-030"} {
+		"WLAN-008", "WLAN-010", "WLAN-011", "WLAN-012", "WLAN-020", "WLAN-021", "WLAN-030"} {
 		if got[rule] == 0 {
 			t.Errorf("rule %s never fired in coverage dataset", rule)
 		}
+	}
+}
+
+func TestDeepRulesFire(t *testing.T) {
+	// Hidden SSID (WLAN-009).
+	hidden := testAP("02:00:00:00:00:A1", "", 6, "2.4GHz", -70,
+		models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, KeyMgmt: "PSK"})
+	// WPA3 transition (WLAN-007).
+	transition := testAP("02:00:00:00:00:A2", "HybridWiFi", 40, "5GHz", -55,
+		models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "WPA2"}, AKMSuites: []string{"SAE", "PSK"}, Transition: true})
+	// Evil twin (WLAN-013): same SSID, one open.
+	twinSecure := testAP("02:00:00:00:00:A3", "LoungeWiFi", 100, "5GHz", -44,
+		models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE"}, PMF: true})
+	twinOpen := testAP("02:00:00:00:00:A4", "LoungeWiFi", 6, "2.4GHz", -50,
+		models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"})
+	// Open AP referenced by a station (WLAN-014).
+	openAP := testAP("02:00:00:00:00:A5", "FreeWiFi", 1, "2.4GHz", -48,
+		models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"})
+	// 2.4 GHz density for WLAN-021.
+	var dense []models.AccessPoint
+	for i := 0; i < 8; i++ {
+		dense = append(dense, testAP(fmt.Sprintf("02:00:00:00:00:B%d", i), fmt.Sprintf("Dense_%d", i), 1+i, "2.4GHz", -60,
+			models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, PMF: true}))
+	}
+
+	aps := append([]models.AccessPoint{hidden, transition, twinSecure, twinOpen, openAP}, dense...)
+	stations := []models.Station{
+		{MAC: "AA:BB:CC:DD:00:01", APBSSID: "02:00:00:00:00:A5", Signal: -48, Associated: true},
+		{MAC: "AA:BB:CC:DD:00:02", Signal: -61, ProbedSSIDs: []string{"Net1", "Net2", "Net3", "Net4"}},
+	}
+	traffic := []models.TrafficObservation{
+		{Type: "deauth", Target: "02:00:00:00:00:A4", Count: 4},
+		{Type: "deauth", Target: "02:00:00:00:00:A3", Count: 1},
+		{Type: "data", Protocol: "http", Target: "02:00:00:00:00:A5"},
+		{Type: "data", Protocol: "dns", Target: "02:00:00:00:00:A5"},
+		{Type: "data", Protocol: "dot11", Detail: "TKIP-encrypted data frames", Target: "02:00:00:00:00:AA"},
+	}
+
+	got := map[string]int{}
+	for _, f := range runAllRulesFull(t, aps, stations, traffic) {
+		got[f.RuleID]++
+	}
+	for _, rule := range []string{"WLAN-007", "WLAN-008", "WLAN-009", "WLAN-013", "WLAN-014",
+		"WLAN-015", "WLAN-016", "WLAN-017", "WLAN-018", "WLAN-021"} {
+		if got[rule] == 0 {
+			t.Errorf("rule %s never fired in deep coverage dataset", rule)
+		}
+	}
+	// WLAN-013 must flag the open twin pair but not miscount.
+	if got["WLAN-013"] != 1 {
+		t.Errorf("WLAN-013: got %d findings, want 1", got["WLAN-013"])
 	}
 }
 

@@ -37,19 +37,24 @@ func NormalizeSecurity(sec *models.SecurityAdvertisement) {
 			protos = append(protos, strings.ToUpper(strings.TrimSpace(p)))
 		}
 		sec.Protocols = protos
+		var akms []string
 		for _, p := range protos {
 			switch {
 			case strings.Contains(p, "OWE"):
 				sec.Auth = "OWE"
 				sec.KeyMgmt = "OWE"
+				akms = append(akms, "OWE")
 			case strings.Contains(p, "SAE"):
 				sec.Auth = "SAE"
 				sec.KeyMgmt = "SAE"
+				akms = append(akms, "SAE")
 			case strings.Contains(p, "PSK"):
 				sec.KeyMgmt = "PSK"
+				akms = append(akms, "PSK")
 			case strings.Contains(p, "EAP"):
 				sec.Enterprise = true
 				sec.KeyMgmt = "EAP"
+				akms = append(akms, "802.1X")
 			}
 			switch {
 			case strings.Contains(p, "CCMP") || strings.Contains(p, "RSN"):
@@ -62,6 +67,12 @@ func NormalizeSecurity(sec *models.SecurityAdvertisement) {
 				sec.Cipher = "WEP"
 			}
 		}
+		sec.AKMSuites = dedupeStrings(append(sec.AKMSuites, akms...))
+	} else if sec.KeyMgmt != "" {
+		sec.AKMSuites = dedupeStrings(append(sec.AKMSuites, sec.KeyMgmt))
+	}
+	if hasAKM(sec.AKMSuites, "SAE") && hasAKM(sec.AKMSuites, "PSK") {
+		sec.Transition = true
 	}
 	if sec.Auth == "" && sec.KeyMgmt == "" {
 		if !sec.Enabled {
@@ -70,6 +81,32 @@ func NormalizeSecurity(sec *models.SecurityAdvertisement) {
 			sec.Auth = "UNKNOWN"
 		}
 	}
+}
+
+func hasAKM(suites []string, want string) bool {
+	for _, s := range suites {
+		if strings.EqualFold(strings.TrimSpace(s), want) {
+			return true
+		}
+	}
+	return false
+}
+
+func dedupeStrings(in []string) []string {
+	var out []string
+	seen := make(map[string]struct{})
+	for _, s := range in {
+		s = strings.ToUpper(strings.TrimSpace(s))
+		if s == "" {
+			continue
+		}
+		if _, dup := seen[s]; dup {
+			continue
+		}
+		seen[s] = struct{}{}
+		out = append(out, s)
+	}
+	return out
 }
 
 // ChannelOccupancy reports how many APs are on each channel.
