@@ -32,8 +32,8 @@ func TestAppRunPipelineSim(t *testing.T) {
 	if sess == nil {
 		t.Fatal("nil session")
 	}
-	if len(sess.AccessPoints) != 16 {
-		t.Errorf("APs = %d, want 16", len(sess.AccessPoints))
+	if len(sess.AccessPoints) != 23 {
+		t.Errorf("APs = %d, want 23", len(sess.AccessPoints))
 	}
 	if len(sess.Findings) == 0 {
 		t.Error("expected findings")

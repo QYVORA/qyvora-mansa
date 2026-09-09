@@ -42,7 +42,7 @@ json_valid() {
 step "version string"
 if "$BIN" version 2>/dev/null | grep -q "mansa"; then ok; else bad "no version output"; fi
 
-step "assess --sim -o json (16 APs, 20 findings)"
+step "assess --sim -o json (23 APs, 57 findings)"
 OUT="$("$BIN" assess --sim -o json 2>/dev/null)" \
     && echo "$OUT" | json_valid \
     && echo "$OUT" | grep -q '"findings"' \
@@ -73,10 +73,10 @@ RPT="$WORK/report.json"
     && [ -s "$RPT" ] && python3 -c 'import json; json.load(open("'"$RPT"'"))' 2>/dev/null \
     && ok || bad "json report not written"
 
-step "events JSONL (77 lines full sim)"
+step "events JSONL (153 lines full sim)"
 EV="$WORK/events.jsonl"
 "$BIN" assess --sim --events "$EV" >/dev/null 2>&1 \
-    && [ "$(wc -l < "$EV")" -eq 77 ] && ok || bad "expected 77 event lines, got $(wc -l < "$EV" 2>/dev/null)"
+    && [ "$(wc -l < "$EV")" -eq 153 ] && ok || bad "expected 153 event lines, got $(wc -l < "$EV" 2>/dev/null)"
 
 # --- interactive console in pipe mode ----
 # The console is the bare invocation (no subcommand).

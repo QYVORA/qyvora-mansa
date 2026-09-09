@@ -34,8 +34,8 @@ func TestRunPipelineSim(t *testing.T) {
 			t.Errorf("stage[%d]=%q want %q", i, sess.Stages[i], want)
 		}
 	}
-	if len(sess.AccessPoints) != 16 {
-		t.Errorf("discovered %d APs, want 16", len(sess.AccessPoints))
+	if len(sess.AccessPoints) != 23 {
+		t.Errorf("discovered %d APs, want 23", len(sess.AccessPoints))
 	}
 	if len(sess.Findings) == 0 {
 		t.Error("expected findings on the simulation dataset")
