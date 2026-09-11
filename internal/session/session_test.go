@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/QYVORA/qyvora-mansa/pkg/models"
 )
@@ -52,10 +53,12 @@ func TestStoreLatest(t *testing.T) {
 	if _, err := store.Save(first); err != nil {
 		t.Fatalf("save: %v", err)
 	}
-	// Ensure distinct mtimes so ordering is deterministic.
+	// Ensure distinct mtimes so ordering is deterministic. A 1ns offset rounds
+	// to the first file's mtime on coarse filesystems (e.g. Windows), so use a
+	// full second.
 	second := models.NewSession(&models.Target{Type: models.TargetInterface, Value: "wlan0"})
 	path2, _ := store.Save(second)
-	_ = os.Chtimes(path2, second.Start, second.Start.Add(1))
+	_ = os.Chtimes(path2, second.Start, second.Start.Add(time.Second))
 
 	latest, err := store.Latest()
 	if err != nil {

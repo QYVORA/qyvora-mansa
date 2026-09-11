@@ -30,7 +30,7 @@ builds:
 #   mansa-windows-amd64.exe, mansa-windows-arm64.exe
 archives:
   - id: binary
-    format: binary
+    formats: [binary]
     name_template: >-
       mansa-{{ if eq .Os "darwin" }}macos{{ else }}{{ .Os }}{{ end }}-{{ .Arch }}{{ if eq .Os "windows" }}.exe{{ end }}
 
