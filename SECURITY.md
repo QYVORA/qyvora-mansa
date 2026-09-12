@@ -6,8 +6,8 @@ take the security of the tool and of its users seriously.
 ## Reporting a vulnerability
 
 Please **do not** open a public issue for security vulnerabilities.
-Instead, report privately to the maintainers via a GitHub security
-advisory or a direct email to the project maintainers.
+Instead, report privately via a GitHub security advisory or by emailing the
+QYVORA OffSec team at **qyvorasec@gmail.com**.
 
 Please include:
 
@@ -19,6 +19,12 @@ Please include:
 You should receive an acknowledgement within 5 business days and a
 detailed response (including a workaround if applicable) within 10
 business days.
+
+## Contact
+
+- **Website:** https://qyvora.netlify.app
+- **Security contact:** qyvorasec@gmail.com
+- **Organisation:** QYVORA OffSec — Tamale, Ghana
 
 ## Scope
 

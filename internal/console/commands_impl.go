@@ -113,7 +113,7 @@ func runStatus(c *Console, _ *Parsed) error {
 	c.ui.KV("mode", mode)
 	c.ui.KV("authorized", auth)
 	c.ui.KV("backend", backend)
-	c.ui.KV("version", c.app.VersionJSON()["version"])
+	c.ui.KV("version", c.app.VersionJSON().Version)
 	return nil
 }
 

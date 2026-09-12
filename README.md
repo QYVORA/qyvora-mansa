@@ -48,7 +48,7 @@ Full assessment, no hardware, deterministic:
 mansa assess --sim
 ```
 
-Interactive console:
+Interactive console (REPL on a real terminal; stdin piping uses a plain line reader):
 
 ```sh
 mansa
@@ -116,6 +116,11 @@ Global flags: `-o/--output`, `-y/--authorized`, `-v/--verbose`,
 ## Support
 
 See [SUPPORT.md](SUPPORT.md). Report issues on GitHub.
+
+## Contact
+
+QYVORA OffSec — Tamale, Ghana
+Website: https://qyvora.netlify.app · Security/Support: qyvorasec@gmail.com
 
 ## License
 

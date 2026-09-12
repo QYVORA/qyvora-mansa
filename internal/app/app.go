@@ -334,17 +334,21 @@ func (a *AppState) Capabilities() []capabilities.Tool {
 
 // VersionInfo returns the formatted version string.
 func (a *AppState) VersionInfo() string {
-	return version.String()
+	i := version.GetInfo()
+	return "mansa " + i.Version +
+		"\n  framework:  " + i.Framework +
+		"\n  commit:     " + i.Commit +
+		"\n  built:      " + i.Date +
+		"\n  by:         " + i.BuildUser +
+		"\n  go:         " + i.GoVersion + " " + i.OS + "/" + i.Arch +
+		"\n  website:    " + i.Website +
+		"\n  support:    " + i.Support +
+		"\n  built in:   " + i.BuiltIn
 }
 
 // VersionJSON returns a machine-readable version object.
-func (a *AppState) VersionJSON() map[string]string {
-	return map[string]string{
-		"framework": "mansa",
-		"version":   version.Version,
-		"commit":    version.Commit,
-		"date":      version.Date,
-	}
+func (a *AppState) VersionJSON() version.Info {
+	return version.GetInfo()
 }
 
 func currentUser() string {

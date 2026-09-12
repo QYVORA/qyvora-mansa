@@ -8,6 +8,14 @@ follows [Semantic Versioning](https://semver.org/) and
 
 ### Changed
 
+- **Unified version system** — `internal/version` now carries the canonical
+  framework identity (framework, version, commit, date, build user, Go
+  version/arch/os) stamped via `-ldflags`, plus official QYVORA contact
+  details. `mansa version` renders the full block in terminal and JSON
+  formats.
+- **Contact details** — the `version` command, README, and `SECURITY.md`
+  surface official QYVORA contact: https://qyvora.netlify.app ·
+  qyvorasec@gmail.com · Tamale, Ghana.
 - `--dry-run` plan output now routes to stderr when a machine-readable format
   is active, keeping stdout valid.
 - Reports are written with mode 0600 in a 0700 directory (matching session
