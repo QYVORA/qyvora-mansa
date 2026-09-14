@@ -140,7 +140,7 @@ func fetchLatest(ctx context.Context, cfg Config) (*release, error) {
 		return nil, fmt.Errorf("GitHub API returned %d", resp.StatusCode)
 	}
 	var rel release
-	if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&rel); err != nil {
 		return nil, err
 	}
 	return &rel, nil
@@ -163,7 +163,7 @@ func verifyChecksum(ctx context.Context, cfg Config, artifactName, path string) 
 	}
 	defer resp.Body.Close()
 	var rel release
-	if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&rel); err != nil {
 		return err
 	}
 	for _, a := range rel.Assets {
@@ -176,7 +176,8 @@ func verifyChecksum(ctx context.Context, cfg Config, artifactName, path string) 
 			return err
 		}
 		defer cresp.Body.Close()
-		body, err := io.ReadAll(cresp.Body)
+		const maxChecksumsSize = 1 << 20
+		body, err := io.ReadAll(io.LimitReader(cresp.Body, maxChecksumsSize))
 		if err != nil {
 			return err
 		}

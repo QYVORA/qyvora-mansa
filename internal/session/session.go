@@ -5,6 +5,7 @@ package session
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -46,12 +47,15 @@ func (s *Store) Save(sess *models.Session) (string, error) {
 	return path, nil
 }
 
-// Load reads a session by id (or literal path if it ends in .session.json).
+// Load reads a session by id from the store directory. The id is treated as a
+// single file identifier; absolute paths, path separators, and directory
+// traversal are rejected so Load never reads outside s.dir.
 func (s *Store) Load(id string) (*models.Session, error) {
-	path := id
-	if !strings.HasSuffix(id, ".session.json") {
-		path = filepath.Join(s.dir, id+".session.json")
+	id = strings.TrimSuffix(id, ".session.json")
+	if id == "" || id == "." || id == ".." || strings.ContainsAny(id, `/\`) {
+		return nil, fmt.Errorf("invalid session id %q", id)
 	}
+	path := filepath.Join(s.dir, id+".session.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err

@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
+
+	"golang.org/x/term"
 
 	"github.com/QYVORA/qyvora-mansa/internal/pipeline"
 	"github.com/QYVORA/qyvora-mansa/internal/reporting"
@@ -181,16 +184,55 @@ func runBack(c *Console, _ *Parsed) error {
 	return nil
 }
 
-func runAuthorize(c *Console, _ *Parsed) error {
+func runAuthorize(c *Console, p *Parsed) error {
+	if c.sim {
+		c.ok("simulation mode does not need authorization; disable it with `sim off` first")
+		return nil
+	}
 	if c.iface == "" {
 		c.iface = c.app.Cfg.GetString("wireless.interface")
 	}
 	if c.iface == "" {
 		c.iface = "wlan0"
 	}
+	if c.authorized {
+		c.ok("already authorized for live assessment on %s", c.iface)
+		return nil
+	}
+	granted := p.Bool("yes")
+	if !granted && strings.EqualFold(os.Getenv("QYVORA_AUTHORIZED"), "true") {
+		granted = true
+	}
+	if !granted && c.app.Cfg.GetBool("authorized") {
+		granted = true
+	}
+	if !granted {
+		granted = c.confirm("Live assessment on %s transmits on RF within your authorized scope. Confirm? [y/N] ", c.iface)
+	}
+	if !granted {
+		c.failf("authorization declined; live assessment on %s remains disabled", c.iface)
+		return nil
+	}
 	c.authorized = true
 	c.ok("authorization granted for live assessment on %s", c.iface)
 	return nil
+}
+
+// confirm requests an explicit yes/no on the interactive terminal and returns
+// true only on an affirmative answer. Non-interactive (piped) sessions always
+// return false so automated input cannot silently authorize a live assessment.
+func (c *Console) confirm(prompt string, a ...any) bool {
+	if !c.interactive || !term.IsTerminal(int(os.Stdin.Fd())) {
+		return false
+	}
+	fmt.Fprintf(c.out, prompt, a...)
+	line, err := term.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Fprintln(c.out)
+	if err != nil {
+		return false
+	}
+	answer := strings.ToLower(strings.TrimSpace(string(line)))
+	return answer == "y" || answer == "yes"
 }
 
 func runSim(c *Console, p *Parsed) error {
@@ -443,7 +485,7 @@ func runReport(c *Console, p *Parsed) error {
 		if err := os.MkdirAll(filepath.Dir(out), 0o750); err != nil {
 			return err
 		}
-		if err := os.WriteFile(out, []byte(content), 0o644); err != nil {
+		if err := os.WriteFile(out, []byte(content), 0o600); err != nil {
 			return err
 		}
 		c.ok("report written to %s", out)
@@ -563,6 +605,81 @@ func runEvents(c *Console, p *Parsed) error {
 	}
 	c.ui.Table([]string{"stage", "status"}, rows)
 	return nil
+}
+
+const maxEnvironmentRows = 20
+
+func runEnvironment(c *Console, p *Parsed) error {
+	id := ""
+	if p.ArgsLen() > 0 {
+		id = p.Arg(0)
+	} else if c.current != nil {
+		id = c.current.sessID
+	}
+	sess, err := c.app.LoadSession(id)
+	if err != nil {
+		return fmt.Errorf("no session: %w", err)
+	}
+	type chanCount struct{ channel, n int }
+	chanMap := map[int]int{}
+	ssids := map[string]struct{}{}
+	var needing []models.AccessPoint
+	for _, ap := range sess.AccessPoints {
+		chanMap[ap.Channel]++
+		if ap.SSID != "" {
+			ssids[ap.SSID] = struct{}{}
+		}
+		if requiresAssessment(ap) {
+			needing = append(needing, ap)
+		}
+	}
+	chans := make([]chanCount, 0, len(chanMap))
+	for ch, n := range chanMap {
+		chans = append(chans, chanCount{channel: ch, n: n})
+	}
+	sort.Slice(chans, func(i, j int) bool { return chans[i].channel < chans[j].channel })
+
+	c.ui.Section("Environment summary")
+	c.ui.KV("interface", orNone(sess.Interface))
+	c.ui.KV("access points", fmt.Sprintf("%d", len(sess.AccessPoints)))
+	c.ui.KV("unique ssids", fmt.Sprintf("%d", len(ssids)))
+	c.ui.KV("stations", fmt.Sprintf("%d", len(sess.Stations)))
+	c.ui.KV("channels in use", fmt.Sprintf("%d", len(chans)))
+	c.ui.KV("networks requiring assessment", fmt.Sprintf("%d", len(needing)))
+
+	chRows := make([][]string, 0, len(chans))
+	for _, cc := range chans {
+		chRows = append(chRows, []string{fmt.Sprintf("%d", cc.channel), fmt.Sprintf("%d", cc.n)})
+	}
+	c.ui.Table([]string{"channel", "aps"}, chRows)
+
+	if len(needing) == 0 {
+		c.printf("  (no open or weak-security networks observed)\n")
+		return nil
+	}
+	c.ui.Section(fmt.Sprintf("Networks requiring assessment (%d)", len(needing)))
+	rows := make([][]string, 0, min(maxEnvironmentRows, len(needing)))
+	for _, ap := range needing {
+		rows = append(rows, []string{ap.BSSID, ap.SSID, ap.Band, orNone(ap.Security.Auth)})
+		if len(rows) == maxEnvironmentRows {
+			break
+		}
+	}
+	c.ui.Table([]string{"bssid", "ssid", "band", "security"}, rows)
+	if len(needing) > len(rows) {
+		c.printf("  (… and %d more)\n", len(needing)-len(rows))
+	}
+	return nil
+}
+
+// requiresAssessment reports whether an AP advertises no security or an
+// explicitly open/weak auth method and therefore warrants assessment.
+func requiresAssessment(ap models.AccessPoint) bool {
+	auth := strings.ToLower(strings.TrimSpace(ap.Security.Auth))
+	if !ap.Security.Enabled {
+		return ap.SSID != ""
+	}
+	return auth == "" || auth == "open" || strings.HasPrefix(auth, "wep")
 }
 
 func runHistory(c *Console, _ *Parsed) error {

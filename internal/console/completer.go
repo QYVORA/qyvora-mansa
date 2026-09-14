@@ -64,6 +64,8 @@ func (c *Console) newCompleter() *readline.PrefixCompleter {
 		readline.PcItem("target", partOf("show", "list")...),
 		readline.PcItem("session"),
 		readline.PcItem("events"),
+		readline.PcItem("environment"),
+		readline.PcItem("env"),
 		readline.PcItem("history"),
 		readline.PcItem("clear"),
 		readline.PcItem("banner"),

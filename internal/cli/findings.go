@@ -116,7 +116,7 @@ func newReportCmd() *cobra.Command {
 				if err := os.MkdirAll(filepath.Dir(outPath), 0o750); err != nil {
 					return err
 				}
-				return os.WriteFile(outPath, []byte(content), 0o644)
+				return os.WriteFile(outPath, []byte(content), 0o600)
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), content)
 			return nil

@@ -41,8 +41,34 @@ func TestStoreLoadByPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("save: %v", err)
 	}
-	if _, err := store.Load(path); err != nil {
-		t.Errorf("load by path: %v", err)
+	if _, err := store.Load(path); err == nil {
+		t.Error("loading by an absolute path should be rejected")
+	}
+}
+
+func TestStoreLoadSuffixID(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+	sess := models.NewSession(&models.Target{Type: models.TargetInterface, Value: "wlan0"})
+	if _, err := store.Save(sess); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	loaded, err := store.Load(sess.ID + ".session.json")
+	if err != nil {
+		t.Fatalf("load by id with suffix: %v", err)
+	}
+	if loaded.ID != sess.ID {
+		t.Errorf("loaded id = %s want %s", loaded.ID, sess.ID)
+	}
+}
+
+func TestStoreLoadRejectsTraversal(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore(dir)
+	for _, id := range []string{"..", ".", "/etc/passwd", "../../etc/passwd", "sessions/..", `..\..\etc\passwd`, "a/b"} {
+		if _, err := store.Load(id); err == nil {
+			t.Errorf("Load(%q) should be rejected", id)
+		}
 	}
 }
 

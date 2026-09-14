@@ -24,6 +24,22 @@ follows [Semantic Versioning](https://semver.org/) and
 ### Added
 
 
+- **Wireless authorization gate** — the console `authorize` command only
+  grants live-assessment consent via `--yes`, the `QYVORA_AUTHORIZED=true`
+  environment variable, config `authorized=true`, or an interactive TTY y/N
+  prompt; without explicit consent it declines and live wireless assessment
+  stays disabled. Passive discovery remains available un-authorized; `--sim`
+  mode notes that simulation needs no authorization.
+- **Console `environment` command** (`env`) — summarizes the assessed wireless
+  environment: channel density, unique SSIDs, stations, and channels that
+  require assessment, rendered with bounded rows.
+- **Session store hardening** — `session.load` treats its argument as a single
+  filename component: relative-only, `.session.json`-suffixed, and always
+  resolved inside the session store directory; absolute paths and traversal
+  (`..`) are rejected.
+- **Report permissions** — assessment and findings reports are written with
+  mode 0600 in a 0700 directory, and self-update checks summary and release
+  JSON are read through capped readers.
 - Full interactive console (REPL) with pipe mode, completion, history,
   contextual prompt, and HUD.
 - One-shot CLI mirroring every console command (`assess`, `discover`,

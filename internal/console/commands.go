@@ -84,8 +84,9 @@ func commandTable() []*Command {
 		{
 			Name: "authorize", Category: catCore,
 			Summary: "grant authorization for live assessment scope",
-			Usage:   "authorize",
-			Details: "Interactive authorization for the currently selected interface. Simulation never requires it.",
+			Usage:   "authorize [--yes]",
+			Flags:   []FlagSpec{{Name: "yes", Kind: FlagBool}},
+			Details: "Grants authorization for live assessment on the selected interface. Requires an explicit affirmative: an interactive y/N prompt, the --yes flag, config authorized=true, or QYVORA_AUTHORIZED=true. Simulation never requires it. Authorization is cleared by `back`.",
 			Run:     runAuthorize,
 		},
 		{
@@ -202,6 +203,13 @@ func commandTable() []*Command {
 			Summary: "show session stage events",
 			Usage:   "events [session-id]",
 			Run:     runEvents,
+		},
+		{
+			Name: "environment", Aliases: []string{"env"}, Category: catAnalysis,
+			Summary: "show the assessed RF environment summary",
+			Usage:   "environment [session-id]",
+			Details: "Summarizes the assessed RF environment: AP density per channel, unique SSIDs, observed stations, and the networks requiring assessment. Row rendering is bounded for large datasets.",
+			Run:     runEnvironment,
 		},
 		{
 			Name: "history", Category: catSystem,
