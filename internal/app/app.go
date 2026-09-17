@@ -6,6 +6,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/user"
 	"strings"
@@ -15,7 +16,9 @@ import (
 
 	"github.com/QYVORA/qyvora-mansa/internal/capabilities"
 	"github.com/QYVORA/qyvora-mansa/internal/config"
+	errs "github.com/QYVORA/qyvora-mansa/internal/errors"
 	"github.com/QYVORA/qyvora-mansa/internal/events"
+	"github.com/QYVORA/qyvora-mansa/internal/exitcode"
 	"github.com/QYVORA/qyvora-mansa/internal/logger"
 	"github.com/QYVORA/qyvora-mansa/internal/output"
 	"github.com/QYVORA/qyvora-mansa/internal/pipeline"
@@ -120,8 +123,15 @@ func (a *AppState) resolveEventSink() (*os.File, error) {
 	case "", "off":
 		return nil, nil
 	case "stdout":
+		// stdout carries only the JSONL event stream; every human and report
+		// line routes to stderr.
+		a.Printer.SetWriter(os.Stderr)
 		return os.Stdout, nil
 	case "stderr":
+		// The event JSONL stream owns stderr in machine mode: route human
+		// diagnostics away so strict JSONL consumers never see plain log
+		// lines interleaved with events.
+		a.Log.SetWriter(io.Discard)
 		return os.Stderr, nil
 	default:
 		return os.OpenFile(a.EventsF, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
@@ -192,9 +202,9 @@ func (a *AppState) Authorize(t *models.Target, forceAuth bool) (*models.Target, 
 			}
 			return t, nil
 		}
-		return t, fmt.Errorf("authorization declined")
+		return t, errs.NewExitError(exitcode.AuthorizationRefused, "authorization declined")
 	}
-	return t, fmt.Errorf("target authorization required; re-run with --authorized to confirm scope non-interactively")
+	return t, errs.WrapExitError(exitcode.AuthorizationRefused, "target authorization required; re-run with --authorized to confirm scope non-interactively", nil)
 }
 
 // RunPipeline executes the assessment pipeline.
@@ -204,6 +214,9 @@ func (a *AppState) RunPipeline(ctx context.Context, t *models.Target, sim bool) 
 		return nil, nil
 	}
 	sess := models.NewSession(t)
+	if a.Events != nil {
+		sess.ID = a.Events.ExecutionID()
+	}
 	sess.Offline = sim
 	if sim {
 		a.Backend = transport.New()
@@ -238,6 +251,9 @@ func (a *AppState) RunPipelineStage(ctx context.Context, t *models.Target, sim b
 		return nil, nil
 	}
 	sess := models.NewSession(t)
+	if a.Events != nil {
+		sess.ID = a.Events.ExecutionID()
+	}
 	sess.Offline = sim
 	if sim {
 		a.Backend = transport.New()
