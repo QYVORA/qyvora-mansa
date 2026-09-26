@@ -212,7 +212,7 @@ func renderSessionSummary(cmd *cobra.Command, sess *models.Session) {
 		appState.Printer.Print(sess)
 		return
 	}
-	out := cmd.OutOrStdout()
+	out := cliTerminalOut(cmd)
 	fmt.Fprintf(out, "Session %s (%s)\n", sess.ID, sess.Target)
 	fmt.Fprintf(out, "  Access points: %d\n", len(sess.AccessPoints))
 	fmt.Fprintf(out, "  Stations:      %d\n", len(sess.Stations))
@@ -229,7 +229,7 @@ func renderInterfaces(cmd *cobra.Command, sess *models.Session) {
 		appState.Printer.Print(sess.Interfaces)
 		return
 	}
-	out := cmd.OutOrStdout()
+	out := cliTerminalOut(cmd)
 	fmt.Fprintf(out, "Discovered %d wireless interface(s)\n\n", len(sess.Interfaces))
 	rows := make([][]string, 0, len(sess.Interfaces))
 	for _, iface := range sess.Interfaces {
@@ -247,7 +247,7 @@ func renderAccessPoints(cmd *cobra.Command, sess *models.Session) {
 		appState.Printer.Print(sess.AccessPoints)
 		return
 	}
-	out := cmd.OutOrStdout()
+	out := cliTerminalOut(cmd)
 	ssid, _ := cmd.Flags().GetString("ssid")
 	bssid, _ := cmd.Flags().GetString("bssid")
 	band, _ := cmd.Flags().GetString("band")
@@ -276,7 +276,7 @@ func renderStations(cmd *cobra.Command, sess *models.Session) {
 		appState.Printer.Print(sess.Stations)
 		return
 	}
-	out := cmd.OutOrStdout()
+	out := cliTerminalOut(cmd)
 	fmt.Fprintf(out, "Observed %d station(s)\n\n", len(sess.Stations))
 	rows := make([][]string, 0, len(sess.Stations))
 	for _, st := range sess.Stations {

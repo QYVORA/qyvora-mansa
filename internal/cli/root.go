@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,6 +19,7 @@ import (
 	"github.com/QYVORA/qyvora-mansa/internal/console"
 	errs "github.com/QYVORA/qyvora-mansa/internal/errors"
 	"github.com/QYVORA/qyvora-mansa/internal/exitcode"
+	"github.com/QYVORA/qyvora-mansa/internal/output"
 	"github.com/QYVORA/qyvora-mansa/internal/version"
 )
 
@@ -36,6 +38,16 @@ var appState *app.AppState
 
 // consoleExitCode carries the console's exit code into ExecuteArgs.
 var consoleExitCode int
+
+// cliTerminalOut returns the destination for human terminal lines. When the
+// event JSONL stream owns stdout (--events stdout), human lines go to stderr
+// so the stream stays pure.
+func cliTerminalOut(cmd *cobra.Command) io.Writer {
+	if eventsFlag == "stdout" {
+		return os.Stderr
+	}
+	return cmd.OutOrStdout()
+}
 
 // Execute runs the root command against os.Args and returns the exit code.
 func Execute() int {
@@ -116,6 +128,12 @@ to evaluate.`,
 		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 			if initErr := appInitErr(); initErr != nil {
 				return errs.NewExitError(2, initErr.Error())
+			}
+			if eventsFlag == "stdout" && appState.Printer.Format() != output.FormatTerminal {
+				// stdout must carry exactly one machine stream. With the event
+				// JSONL stream owning stdout, a machine report format cannot
+				// share it: use --events stderr or --events <file>.
+				return usagef("cannot combine --events stdout with a machine report format; use --events stderr or --events <file>")
 			}
 			return nil
 		},

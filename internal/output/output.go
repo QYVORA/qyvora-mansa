@@ -65,6 +65,10 @@ func (p *Printer) Format() Format { p.mu.Lock(); defer p.mu.Unlock(); return p.f
 // Writer returns the underlying writer.
 func (p *Printer) Writer() io.Writer { return p.w }
 
+// SetWriter redirects the printer (used when the event JSONL stream owns
+// stdout so machine output routes to stderr instead).
+func (p *Printer) SetWriter(w io.Writer) { p.mu.Lock(); p.w = w; p.mu.Unlock() }
+
 // Print writes v in the configured format.
 func (p *Printer) Print(v any) {
 	p.mu.Lock()
