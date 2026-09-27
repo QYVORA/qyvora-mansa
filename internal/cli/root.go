@@ -13,10 +13,8 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 
 	"github.com/QYVORA/qyvora-mansa/internal/app"
-	"github.com/QYVORA/qyvora-mansa/internal/console"
 	errs "github.com/QYVORA/qyvora-mansa/internal/errors"
 	"github.com/QYVORA/qyvora-mansa/internal/exitcode"
 	"github.com/QYVORA/qyvora-mansa/internal/output"
@@ -144,16 +142,13 @@ to evaluate.`,
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			// Machine-oriented global flags keep the classic behaviour: a
+			// redirected stdout, a machine report or an explicit event stream
+			// must not be handed a full-screen interface.
 			if formatFlag == "json" || eventsFlag != "" || quietFlag {
 				return cmd.Help()
 			}
-			consoleExitCode = console.New(console.Options{
-				Interactive: term.IsTerminal(int(os.Stdin.Fd())),
-				Out:         cmd.OutOrStdout(),
-				Err:         cmd.ErrOrStderr(),
-				App:         appState,
-			}).Run(cmd.Context())
-			return nil
+			return runTUI(cmd.Root(), cmd.Context())
 		},
 	}
 	pf := root.PersistentFlags()
@@ -169,6 +164,7 @@ to evaluate.`,
 	})
 	root.SetVersionTemplate(fmt.Sprintf("mansa %s\n", version.Version))
 
+	root.AddCommand(commandTUI())
 	root.AddCommand(newVersionCmd())
 	root.AddCommand(newCapabilitiesCmd())
 	root.AddCommand(newCompletionCmd())
