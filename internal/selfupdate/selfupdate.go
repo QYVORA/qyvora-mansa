@@ -54,6 +54,29 @@ type release struct {
 }
 
 // Run checks for updates and installs if available.
+// releaseArtifactName maps a Go target onto the exact release asset name for a
+// tool. macOS is published as "macos", never "darwin", and Windows assets carry
+// a ".exe" suffix.
+//
+// Android/Termux needs no special case: Go reports GOOS "android" for a
+// GOOS=android build, so this resolves to "{tool}-android-arm64". A linux/arm64
+// asset is never substituted, because Android's bionic linker rejects the
+// ET_EXEC binary a GOOS=linux build produces.
+//
+// It is a package-level function so release_artifact_name_test.go can pin the
+// naming this package shares with the release workflow and install.sh.
+func releaseArtifactName(tool, goos, goarch string) string {
+	os := goos
+	if os == "darwin" {
+		os = "macos"
+	}
+	name := tool + "-" + os + "-" + goarch
+	if goos == "windows" {
+		name += ".exe"
+	}
+	return name
+}
+
 func Run(ctx context.Context, cfg Config, out io.Writer) Result {
 	current := cfg.CurrentVersion()
 	if current == "" || current == "dev" || current == "unknown" {
@@ -75,13 +98,7 @@ func Run(ctx context.Context, cfg Config, out io.Writer) Result {
 		return Result{Status: StatusCurrent, Current: current, Latest: latest, Error: "cannot determine executable path"}
 	}
 	exePath, _ = filepath.EvalSymlinks(exePath)
-	artifactName := cfg.ToolName + "-" + runtime.GOOS + "-" + runtime.GOARCH
-	if runtime.GOOS == "darwin" {
-		artifactName = cfg.ToolName + "-macos-" + runtime.GOARCH
-	}
-	if runtime.GOOS == "windows" {
-		artifactName += ".exe"
-	}
+	artifactName := releaseArtifactName(cfg.ToolName, runtime.GOOS, runtime.GOARCH)
 	var downloadURL string
 	for _, a := range rel.Assets {
 		if a.Name == artifactName {
