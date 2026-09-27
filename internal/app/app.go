@@ -120,7 +120,7 @@ func (a *AppState) resolveEvents() {
 
 func (a *AppState) resolveEventSink() (*os.File, error) {
 	switch strings.ToLower(a.EventsF) {
-	case "", "off":
+	case "", "off", "none", "disable", "disabled":
 		return nil, nil
 	case "stdout":
 		// stdout carries only the JSONL event stream; every human and report
@@ -134,7 +134,10 @@ func (a *AppState) resolveEventSink() (*os.File, error) {
 		a.Log.SetWriter(io.Discard)
 		return os.Stderr, nil
 	default:
-		return os.OpenFile(a.EventsF, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
+		// Truncated, not appended, so one file holds exactly one run's
+		// events. Appending left no run boundary in the file, which matters
+		// to anything tailing it.
+		return os.OpenFile(a.EventsF, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	}
 }
 
