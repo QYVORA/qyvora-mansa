@@ -51,11 +51,24 @@ func runTUI(root *cobra.Command, ctx context.Context) error {
 		Meta:     tuiCommands(root),
 	}
 
+	// The capability registry is the application's own registry, read through
+	// the same normaliser the machine contract uses, so the F1 view and the
+	// `capabilities -o json` output cannot disagree.
+	caps, err := tui.CapabilitiesFrom("mansa", appState.Capabilities())
+	if err != nil {
+		return errs.NewExitError(1, "preparing the capability registry: "+err.Error())
+	}
+
 	code, err := tui.Run(tui.Config{
 		Title:   "QYVORA / MANSA",
 		Version: version.String(),
 		Runner:  runner,
 		Out:     os.Stdout,
+		// The tool's own progress output is discarded rather than shown: it
+		// would be redrawn under the TUI's own frames and read as noise. The
+		// transcript carries the event stream, which is the same information
+		// in a form the interface can lay out.
+		Capabilities: caps,
 	})
 	if err != nil {
 		if tui.IsNotInteractive(err) {
