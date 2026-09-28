@@ -24,14 +24,19 @@ func openSink(t *testing.T, spec string) io.Writer {
 	if err != nil {
 		t.Fatalf("resolving %q: %v", spec, err)
 	}
-	// The concrete check matters: resolveEventSink returns a *os.File, and
-	// handing a nil *os.File back as an io.Writer produces a non-nil
-	// interface value. Testing the interface against nil would report a
-	// disabled stream as a live one.
+	// The concrete check matters: resolveEventSink used to return a *os.File,
+	// and handing a nil *os.File back as an io.Writer produced a non-nil
+	// interface value, so testing the interface against nil would have
+	// reported a disabled stream as a live one. It returns io.Writer now, so a
+	// disabled stream really is nil.
 	if f == nil {
 		return nil
 	}
-	t.Cleanup(func() { _ = f.Close() })
+	// The file destination is opened on first write, so closing an unused
+	// destination is a no-op and creates nothing.
+	if c, ok := f.(io.Closer); ok {
+		t.Cleanup(func() { _ = c.Close() })
+	}
 	return f
 }
 
