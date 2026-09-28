@@ -143,9 +143,13 @@ to evaluate.`,
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			// Machine-oriented global flags keep the classic behaviour: a
-			// redirected stdout, a machine report or an explicit event stream
+			// redirected stdout, a machine report or an explicit event stream.
+			// The event check asks whether a stream was actually asked for:
+			// `--events off` names a destination in order to say there is none,
+			// and treating that as a machine invocation would refuse an ordinary
+			// interactive run.
 			// must not be handed a full-screen interface.
-			if formatFlag == "json" || eventsFlag != "" || quietFlag {
+			if formatFlag == "json" || !app.EventsDisabled(eventsFlag) || quietFlag {
 				return cmd.Help()
 			}
 			return runTUI(cmd.Root(), cmd.Context())

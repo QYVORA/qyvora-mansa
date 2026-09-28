@@ -119,9 +119,10 @@ func (a *AppState) resolveEvents() {
 }
 
 func (a *AppState) resolveEventSink() (*os.File, error) {
-	switch strings.ToLower(a.EventsF) {
-	case "", "off", "none", "disable", "disabled":
+	if EventsDisabled(a.EventsF) {
 		return nil, nil
+	}
+	switch strings.ToLower(a.EventsF) {
 	case "stdout":
 		// stdout carries only the JSONL event stream; every human and report
 		// line routes to stderr.
@@ -384,4 +385,18 @@ func isTTY(f *os.File) bool {
 		return false
 	}
 	return fi.Mode()&os.ModeCharDevice != 0
+}
+
+// EventsDisabled reports whether a --events value asks for no stream at all.
+//
+// It is exported because the interactive guard lives in another package and has
+// to ask the same question: a value that turns the stream off must not read as a
+// request to send it somewhere, or `mansa --events off` would be refused for
+// asking for nothing.
+func EventsDisabled(spec string) bool {
+	switch strings.ToLower(spec) {
+	case "", "off", "none", "disable", "disabled":
+		return true
+	}
+	return false
 }
