@@ -3,8 +3,7 @@ module github.com/QYVORA/qyvora-mansa
 go 1.26.5
 
 require (
-	github.com/QYVORA/qyvora-tui v0.4.0
-	github.com/ergochat/readline v0.1.3
+	github.com/QYVORA/qyvora-tui v0.5.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.20.1
 	go.yaml.in/yaml/v3 v3.0.5
