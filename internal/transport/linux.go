@@ -6,9 +6,13 @@ package transport
 import (
 	"context"
 	"fmt"
+	"net"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/QYVORA/qyvora-mansa/internal/wireless"
 	"github.com/QYVORA/qyvora-mansa/pkg/models"
@@ -21,25 +25,275 @@ type LinuxBackend struct{}
 func NewLinux() *LinuxBackend { return &LinuxBackend{} }
 
 func (b *LinuxBackend) Name() string    { return "linux-iw" }
-func (b *LinuxBackend) Supported() bool { return iwAvailable() }
+func (b *LinuxBackend) Supported() bool { return true }
 
 func (b *LinuxBackend) Capabilities() []string {
-	if !iwAvailable() {
-		return []string{"unsupported"}
+	capabilities := []string{"raw_capture", "bluetooth_adapter_discovery"}
+	if iwAvailable() {
+		capabilities = append(capabilities, "wireless_discovery", "ap_enumeration")
 	}
-	return []string{"wireless_discovery", "ap_enumeration", "client_observation"}
+	return capabilities
 }
+
+// CaptureLinkType reports the kernel link-layer format for an already
+// configured 802.11 capture interface. It never changes interface state.
+func (b *LinuxBackend) CaptureLinkType(iface string) (uint32, error) {
+	device, err := net.InterfaceByName(iface)
+	if err != nil {
+		return 0, fmt.Errorf("find interface %q: %w", iface, err)
+	}
+	typeBytes, err := os.ReadFile(fmt.Sprintf("/sys/class/net/%s/type", device.Name))
+	if err != nil {
+		return 0, fmt.Errorf("read interface type: %w", err)
+	}
+	linkType, err := strconv.Atoi(strings.TrimSpace(string(typeBytes)))
+	if err != nil {
+		return 0, fmt.Errorf("parse interface type: %w", err)
+	}
+	switch linkType {
+	case 801: // ARPHRD_IEEE80211
+		return 105, nil // DLT_IEEE802_11
+	case 803: // ARPHRD_IEEE80211_RADIOTAP
+		return 127, nil // DLT_IEEE802_11_RADIO
+	default:
+		return 0, fmt.Errorf("interface %q is not exposing raw 802.11 frames (kernel type %d)", iface, linkType)
+	}
+}
+
+// Capture reads frames passively from an already configured raw 802.11
+// interface. It does not enable monitor mode or transmit packets.
+func (b *LinuxBackend) Capture(ctx context.Context, iface string, visit func(time.Time, []byte) error) (CaptureStats, error) {
+	return b.CaptureWithPrefilter(ctx, iface, PrefilterSpec{}, visit)
+}
+
+// CaptureWithPrefilter reads frames passively and asks the kernel to discard
+// frames the assessment does not need before they reach this process. A
+// disabled spec is identical to Capture. The prefilter never changes interface
+// mode and never transmits.
+func (b *LinuxBackend) CaptureWithPrefilter(ctx context.Context, iface string, spec PrefilterSpec, visit func(time.Time, []byte) error) (CaptureStats, error) {
+	if visit == nil {
+		return CaptureStats{}, fmt.Errorf("capture callback is required")
+	}
+	linkType, err := b.CaptureLinkType(iface)
+	if err != nil {
+		return CaptureStats{}, err
+	}
+	filter, err := CompilePrefilter(linkType, spec)
+	if err != nil {
+		return CaptureStats{}, err
+	}
+	device, err := net.InterfaceByName(iface)
+	if err != nil {
+		return CaptureStats{}, fmt.Errorf("find interface %q: %w", iface, err)
+	}
+	if stats, ringReady, ringErr := captureTPacketV3(ctx, device.Index, linkType, filter, visit); ringReady {
+		return stats, ringErr
+	}
+	protocol := htons(etherProtocolAll)
+	fd, err := syscall.Socket(syscall.AF_PACKET, syscall.SOCK_RAW|syscall.SOCK_CLOEXEC, int(protocol))
+	if err != nil {
+		return CaptureStats{}, fmt.Errorf("open packet socket (CAP_NET_RAW required): %w", err)
+	}
+	defer syscall.Close(fd)
+	if err := attachPrefilter(fd, filter); err != nil {
+		return CaptureStats{}, err
+	}
+	if err := syscall.Bind(fd, &syscall.SockaddrLinklayer{Protocol: protocol, Ifindex: device.Index}); err != nil {
+		return CaptureStats{}, fmt.Errorf("bind capture socket to %q: %w", iface, err)
+	}
+	if err := syscall.SetsockoptTimeval(fd, syscall.SOL_SOCKET, syscall.SO_RCVTIMEO, &syscall.Timeval{Usec: 200000}); err != nil {
+		return CaptureStats{}, fmt.Errorf("configure capture timeout: %w", err)
+	}
+	stats := CaptureStats{LinkType: linkType}
+	buf := make([]byte, 65535)
+	for {
+		if err := ctx.Err(); err != nil {
+			return stats, err
+		}
+		n, _, recvErr := syscall.Recvfrom(fd, buf, 0)
+		if recvErr != nil {
+			if recvErr == syscall.EAGAIN || recvErr == syscall.EWOULDBLOCK || recvErr == syscall.EINTR {
+				continue
+			}
+			return stats, fmt.Errorf("receive capture frame: %w", recvErr)
+		}
+		if n == 0 {
+			continue
+		}
+		at := time.Now().UTC()
+		if err := visit(at, buf[:n]); err != nil {
+			return stats, err
+		}
+		stats.Packets++
+		stats.Bytes += uint64(n)
+	}
+}
+
+func htons(value uint16) uint16 { return value<<8 | value>>8 }
 
 // DiscoverInterfaces lists wireless interfaces via `iw dev`.
 func (b *LinuxBackend) DiscoverInterfaces() ([]models.WirelessInterface, error) {
+	return b.discoverInterfaces(context.Background())
+}
+
+func (b *LinuxBackend) discoverInterfaces(ctx context.Context) ([]models.WirelessInterface, error) {
 	if !iwAvailable() {
 		return nil, fmt.Errorf("iw is not available; install wireless-tools for live scanning")
 	}
-	out, err := exec.Command("iw", "dev").CombinedOutput()
+	out, err := exec.CommandContext(ctx, "iw", "dev").CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("iw dev failed: %w", err)
 	}
 	return parseIwDev(string(out)), nil
+}
+
+// HardwareReport reports observed interfaces and explicitly unknown
+// capabilities that require a dedicated native radio probe.
+func (b *LinuxBackend) HardwareReport(ctx context.Context) (models.HardwareReport, error) {
+	report := models.HardwareReport{Provider: b.Name(), Interfaces: []models.WirelessInterface{}}
+	adapters, adapterErr := b.DiscoverBluetoothAdapters()
+	if adapterErr == nil {
+		report.BluetoothAdapters = adapters
+	}
+	if !iwAvailable() {
+		report.Capabilities = []models.HardwareCapability{{
+			ID: "wifi.interface_discovery", Domain: "wifi",
+			Implementation: models.CapabilityUnavailable, Hardware: models.CapabilityUnknown,
+			Reason: "the iw executable is not installed",
+		}}
+		appendRawCaptureUnknown(&report, "wireless interfaces could not be queried without iw")
+		appendBluetoothAdapterCapability(&report, adapters, adapterErr)
+		appendUnimplementedWireless(&report)
+		return report, nil
+	}
+	ifaces, err := b.discoverInterfaces(ctx)
+	if err != nil {
+		report.Capabilities = []models.HardwareCapability{{
+			ID: "wifi.interface_discovery", Domain: "wifi",
+			Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown,
+			Reason: err.Error(),
+		}, {
+			ID: "wifi.ap_enumeration", Domain: "wifi",
+			Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown,
+			Reason: "wireless interfaces could not be queried",
+		}}
+		appendRawCaptureUnknown(&report, "wireless interfaces could not be queried")
+		appendBluetoothAdapterCapability(&report, adapters, adapterErr)
+		appendUnimplementedWireless(&report)
+		return report, nil
+	}
+	report.Interfaces = ifaces
+	deviceState := models.CapabilityUnavailable
+	deviceReason := "no wireless interfaces were reported by iw"
+	if len(ifaces) > 0 {
+		deviceState, deviceReason = models.CapabilityAvailable, "iw reported one or more wireless interfaces"
+	}
+	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+		ID: "wifi.interface_discovery", Domain: "wifi",
+		Implementation: models.CapabilityAvailable, Hardware: deviceState, Reason: deviceReason,
+	})
+	if len(ifaces) == 0 {
+		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+			ID: "wifi.ap_enumeration", Domain: "wifi", Implementation: models.CapabilityAvailable,
+			Hardware: models.CapabilityUnavailable, Reason: "no wireless interfaces are currently visible",
+		})
+	} else {
+		for _, iface := range ifaces {
+			report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+				ID: "wifi.ap_enumeration", Domain: "wifi", Implementation: models.CapabilityAvailable,
+				Hardware: models.CapabilityUnknown, Interface: iface.Name,
+				Reason: "interface discovery succeeded; live scan readiness depends on interface state and permissions",
+			})
+		}
+	}
+	var captureInterface string
+	var captureLinkType uint32
+	var captureReason string
+	for _, iface := range ifaces {
+		linkType, linkErr := b.CaptureLinkType(iface.Name)
+		if linkErr == nil {
+			captureInterface, captureLinkType = iface.Name, linkType
+			break
+		}
+		captureReason = linkErr.Error()
+	}
+	if captureInterface != "" {
+		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+			ID: "wifi.raw_capture", Domain: "wifi", Implementation: models.CapabilityAvailable,
+			Hardware: models.CapabilityAvailable, Interface: captureInterface,
+			Reason: fmt.Sprintf("raw 802.11 capture is available (link type %d); CAP_NET_RAW is required", captureLinkType),
+		})
+		// Prove the kernel accepts a prefilter on this interface rather than
+		// reporting an implementation-only capability.
+		supported, reason := probePrefilterSupport(captureInterface, captureLinkType)
+		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+			ID: "wifi.kernel_prefilter", Domain: "wifi", Implementation: models.CapabilityAvailable,
+			Hardware: stateOrUnknown(supported), Interface: captureInterface, Reason: reason,
+		})
+	} else if len(ifaces) == 0 {
+		appendRawCaptureUnknown(&report, "no wireless interfaces were reported by iw")
+	} else {
+		appendRawCaptureUnknown(&report, "requires a preconfigured monitor interface: "+captureReason)
+	}
+	appendBluetoothAdapterCapability(&report, adapters, adapterErr)
+	appendUnimplementedWireless(&report)
+	return report, nil
+}
+
+// stateOrUnknown maps a successful probe to available and a failed probe to
+// unknown, because a refusal does not distinguish an unsupported kernel from
+// missing privileges.
+func stateOrUnknown(ok bool) models.CapabilityState {
+	if ok {
+		return models.CapabilityAvailable
+	}
+	return models.CapabilityUnknown
+}
+
+func appendBluetoothAdapterCapability(report *models.HardwareReport, adapters []models.BluetoothAdapter, err error) {
+	hardware := models.CapabilityUnavailable
+	reason := "no Bluetooth HCI adapters were reported by sysfs"
+	if err != nil {
+		hardware, reason = models.CapabilityUnknown, err.Error()
+	} else if len(adapters) > 0 {
+		hardware, reason = models.CapabilityAvailable, "one or more Bluetooth HCI adapters were reported by sysfs"
+	}
+	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+		ID: "bluetooth.adapter_discovery", Domain: "bluetooth",
+		Implementation: models.CapabilityAvailable, Hardware: hardware, Reason: reason,
+	})
+}
+
+func appendRawCaptureUnknown(report *models.HardwareReport, reason string) {
+	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+		ID: "wifi.raw_capture", Domain: "wifi", Implementation: models.CapabilityAvailable,
+		Hardware: models.CapabilityUnknown, Reason: reason,
+	})
+}
+
+func appendUnimplementedWireless(report *models.HardwareReport) {
+	monitorImplementation, monitorReason := models.CapabilityAvailable, "temporary monitor interfaces can be created with iw when the radio/driver supports them; runtime adapter validation is required"
+	if !iwAvailable() {
+		monitorImplementation, monitorReason = models.CapabilityUnavailable, "iw is not installed; temporary monitor-interface management is unavailable"
+	}
+	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+		ID: "wifi.monitor_mode", Domain: "wifi", Implementation: monitorImplementation,
+		Hardware: models.CapabilityUnknown, Reason: monitorReason,
+	})
+	report.Capabilities = append(report.Capabilities,
+		models.HardwareCapability{ID: "ble.discovery", Domain: "ble", Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown, Reason: "passive HCI LE scanning is implemented; requires an already powered adapter and HCI socket permissions"},
+		models.HardwareCapability{ID: "ble.gatt", Domain: "ble", Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown, Reason: "offline GATT snapshot analysis is implemented; live GATT enumeration is unavailable"},
+	)
+	for _, capability := range []struct{ id, domain string }{
+		{"wifi.client_observation", "wifi"}, {"wifi.frame_injection", "wifi"},
+		{"bluetooth.discovery", "bluetooth"},
+	} {
+		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+			ID: capability.id, Domain: capability.domain,
+			Implementation: models.CapabilityNotImplemented, Hardware: models.CapabilityUnknown,
+			Reason: "Mansa has no provider for this capability yet; hardware support has not been probed",
+		})
+	}
 }
 
 // Scan runs `iw dev <iface> scan` and parses the output.

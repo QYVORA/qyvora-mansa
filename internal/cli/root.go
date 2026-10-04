@@ -187,6 +187,10 @@ to evaluate.`,
 	root.AddCommand(newTargetCmd())
 	root.AddCommand(newSessionCmd())
 	root.AddCommand(newEventsCmd())
+	root.AddCommand(newCaptureCmd())
+	root.AddCommand(newCredentialsCmd())
+	root.AddCommand(newBluetoothCmd())
+	root.AddCommand(newOperationCmds()...)
 	return root
 }
 

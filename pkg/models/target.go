@@ -9,11 +9,16 @@ import "time"
 type TargetType string
 
 const (
-	TargetInterface TargetType = "interface"
-	TargetSSID      TargetType = "ssid"
-	TargetBSSID     TargetType = "bssid"
-	TargetSession   TargetType = "session"
-	TargetCapture   TargetType = "capture"
+	TargetInterface        TargetType = "interface"
+	TargetSSID             TargetType = "ssid"
+	TargetBSSID            TargetType = "bssid"
+	TargetSession          TargetType = "session"
+	TargetCapture          TargetType = "capture"
+	TargetBluetoothAdapter TargetType = "bluetooth-adapter"
+	// TargetSimulation is the scope of a run that used a fixture instead of a
+	// target. It exists so a simulated run is never recorded against a real
+	// target's authorization.
+	TargetSimulation TargetType = "simulation"
 )
 
 // Authorization records that a human explicitly granted scope.

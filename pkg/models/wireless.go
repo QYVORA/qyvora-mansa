@@ -12,20 +12,23 @@ type WirelessInterface struct {
 
 // AccessPoint is a discovered wireless access point.
 type AccessPoint struct {
-	BSSID        string                `json:"bssid"`
-	SSID         string                `json:"ssid"`
-	Channel      int                   `json:"channel"`
-	Frequency    int                   `json:"frequency"`
-	Band         string                `json:"band"`
-	Signal       int                   `json:"signal"`
-	Security     SecurityAdvertisement `json:"security"`
-	Vendor       string                `json:"vendor,omitempty"`
-	Capabilities string                `json:"capabilities,omitempty"`
-	Hidden       bool                  `json:"hidden,omitempty"`
-	FirstSeen    time.Time             `json:"first_seen"`
-	LastSeen     time.Time             `json:"last_seen"`
-	Source       string                `json:"source,omitempty"`
-	IsSimulated  bool                  `json:"is_simulated,omitempty"`
+	BSSID              string                `json:"bssid"`
+	SSID               string                `json:"ssid"`
+	Channel            int                   `json:"channel"`
+	Frequency          int                   `json:"frequency"`
+	Band               string                `json:"band"`
+	Signal             int                   `json:"signal"`
+	Security           SecurityAdvertisement `json:"security"`
+	Vendor             string                `json:"vendor,omitempty"`
+	Capabilities       string                `json:"capabilities,omitempty"`
+	CapabilityFlags    []string              `json:"capability_flags,omitempty"`
+	SupportedRatesMbps []float32             `json:"supported_rates_mbps,omitempty"`
+	BasicRatesMbps     []float32             `json:"basic_rates_mbps,omitempty"`
+	Hidden             bool                  `json:"hidden,omitempty"`
+	FirstSeen          time.Time             `json:"first_seen"`
+	LastSeen           time.Time             `json:"last_seen"`
+	Source             string                `json:"source,omitempty"`
+	IsSimulated        bool                  `json:"is_simulated,omitempty"`
 }
 
 // Station is a wireless client and its observed behavior.
@@ -83,33 +86,66 @@ type TrafficObservation struct {
 	ObservedAt time.Time `json:"observed_at"`
 }
 
-// WPAHandshakeObservation captures the fields required to verify a passphrase
-// against an observed EAPOL handshake. The cryptographic material is limited to
-// what is necessary to perform a local, offline verification.
-type WPAHandshakeObservation struct {
-	SSID      string `json:"ssid"`
-	BSSID     string `json:"bssid"`
-	Anonce    []byte `json:"anonce,omitempty"`
-	Snonce    []byte `json:"snonce,omitempty"`
-	PMKID     []byte `json:"pmkid,omitempty"`
-	MIC       []byte `json:"mic,omitempty"`
-	EAPOLData []byte `json:"eapol_data,omitempty"`
+// WirelessAuthenticationObservation records protocol metadata extracted from
+// an unencrypted 802.11 EAPOL exchange. It never contains a candidate secret.
+type WirelessAuthenticationObservation struct {
+	BSSID                  string    `json:"bssid"`
+	Station                string    `json:"station"`
+	Kind                   string    `json:"kind"`
+	Message                string    `json:"message,omitempty"`
+	FourWaySetComplete     bool      `json:"four_way_message_set_observed,omitempty"`
+	ReplayCounter          uint64    `json:"replay_counter,omitempty"`
+	DescriptorType         uint8     `json:"descriptor_type,omitempty"`
+	PMKIDSHA256            string    `json:"pmkid_sha256,omitempty"`
+	WEPEncryptedFrames     uint64    `json:"wep_encrypted_frames,omitempty"`
+	WEPUniqueIVs           uint64    `json:"wep_unique_ivs,omitempty"`
+	WEPDuplicateIVs        uint64    `json:"wep_duplicate_ivs,omitempty"`
+	WEPIVTrackingTruncated bool      `json:"wep_iv_tracking_truncated,omitempty"`
+	ObservedAt             time.Time `json:"observed_at"`
+	// Verification carries the material needed to check a candidate passphrase
+	// against this message. It is populated only for an EAPOL-Key message that
+	// carries a message integrity code, and never contains a secret: the ANonce
+	// is public and the MIC is a truncated keyed hash.
+	Verification *EAPOLKeyVerification `json:"verification,omitempty"`
 }
 
-// EAPOLKeyCandidate is a candidate passphrase and its digest. The candidate
-// string itself is never persisted by the verification pipeline.
+// EAPOLKeyCandidate is one interpretation of an EAPOL-Key message integrity
+// code: a MIC length and the code the peer transmitted at that offset.
 type EAPOLKeyCandidate struct {
-	Digest string `json:"digest"`
+	// MICLength is 8 for the SHA-1 suites and 16 for the SHA-256 suites.
+	MICLength int `json:"mic_length"`
+	// MIC is the code the peer transmitted, in hexadecimal.
+	MIC string `json:"mic"`
 }
 
-// EAPOLKeyVerification summarizes the outcome of verifying candidates against
-// an observed handshake. The passphrase itself is never stored.
+// EAPOLKeyVerification is the public handshake material required to recompute a
+// message integrity code from a candidate pairwise master key. The zero value
+// means the observation cannot be used for verification.
 type EAPOLKeyVerification struct {
-	SSID                string `json:"ssid"`
-	BSSID               string `json:"bssid"`
-	KDF                 string `json:"kdf"`
-	PMKDerivationValid  bool   `json:"pmk_derivation_valid"`
-	MICVerification     string `json:"mic_verification"`
-	CandidatePassphrase string `json:"-"` // omitted from serialization
-	CandidateDigest     string `json:"candidate_digest"`
+	Message     string `json:"message"`
+	KeyInfo     uint16 `json:"key_info"`
+	ANonce      string `json:"a_nonce"`
+	SNonce      string `json:"s_nonce"`
+	SNonceValid bool   `json:"s_nonce_present"`
+	// Candidates holds every message integrity code consistent with the captured
+	// body. The negotiated cipher suite is not carried in the frame, so a body
+	// whose key data length cannot distinguish the SHA-1 and SHA-256 variants
+	// yields more than one candidate and a verifier must try each.
+	Candidates []EAPOLKeyCandidate `json:"candidates"`
+	// KeyIV is the unencrypted initialization vector of the message.
+	KeyIV string `json:"key_iv"`
+	// ReplayCounter is the replay counter carried by the message.
+	ReplayCounter uint64 `json:"replay_counter"`
+	// SessionKeyID is the KDE selector of the captured message, empty for a
+	// handshake message that carries no KDE.
+	SessionKeyID string `json:"session_key_id,omitempty"`
+	// PMKID is a PMKID observed in a KDE. A PMKID is itself a master key, so a
+	// session carrying one can be verified without a passphrase.
+	PMKID string `json:"pmkid,omitempty"`
+	// SSID and BSSID identify the network the message belongs to.
+	SSID  string `json:"ssid,omitempty"`
+	BSSID string `json:"bssid"`
+	// CapturedEAPOL is the complete four-byte EAPOL header followed by the key
+	// data as transmitted, so the MIC input is reproduced exactly.
+	CapturedEAPOL string `json:"captured_eapol"`
 }
