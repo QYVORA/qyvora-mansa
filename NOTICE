@@ -1,47 +1,63 @@
-MANSA - Authorized Wireless Security Assessment Framework
+Mansa is licensed under the MIT License. See LICENSE.
 
-Copyright 2026 QYVORA
+The following third-party Go modules occur in the compiled package dependency
+graph at this revision. Keep their upstream copyright and license notices when
+redistributing source or binaries. The authoritative license text is included
+with each module source; the list below is an inventory, not a replacement for
+those texts.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+BSD-3-Clause:
+- github.com/atotto/clipboard
+- github.com/fsnotify/fsnotify
+- github.com/spf13/pflag
+- golang.org/x/sys
+- golang.org/x/term
+- golang.org/x/text
 
-    http://www.apache.org/licenses/LICENSE-2.0
+Apache-2.0:
+- github.com/spf13/afero
+- github.com/spf13/cobra
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+MIT and Apache-2.0 (dual licensed):
+- go.yaml.in/yaml/v3
+- gopkg.in/yaml.v3
 
-Third-party licenses:
+MIT:
+- github.com/aymanbagabas/go-osc52/v2
+- github.com/charmbracelet/bubbles
+- github.com/charmbracelet/bubbletea
+- github.com/charmbracelet/colorprofile
+- github.com/charmbracelet/lipgloss
+- github.com/charmbracelet/x/ansi
+- github.com/charmbracelet/x/cellbuf
+- github.com/charmbracelet/x/term
+- github.com/clipperhouse/displaywidth
+- github.com/clipperhouse/stringish
+- github.com/clipperhouse/uax29/v2
+- github.com/go-viper/mapstructure/v2
+- github.com/lucasb-eyer/go-colorful
+- github.com/mattn/go-isatty
+- github.com/mattn/go-runewidth
+- github.com/muesli/ansi
+- github.com/muesli/cancelreader
+- github.com/muesli/termenv
+- github.com/pelletier/go-toml/v2
+- github.com/rivo/uniseg
+- github.com/sagikazarmark/locafero
+- github.com/sourcegraph/conc
+- github.com/spf13/cast
+- github.com/spf13/viper
+- github.com/subosito/gotenv
+- github.com/xo/terminfo
 
-This product includes software developed by the following projects:
+Open licensing item: github.com/QYVORA/qyvora-tui v0.7.0 is in the compiled
+dependency graph, but the published module cache contains no LICENSE or
+COPYING file. Resolve its licensing metadata before publishing a Mansa binary
+that redistributes it.
 
-- spf13/cobra (Apache-2.0)
-- spf13/pflag (BSD-3-Clause)
-- spf13/viper (MIT)
-- spf13/afero (Apache-2.0)
-- spf13/cast (MIT)
-- fsnotify/fsnotify (BSD-3-Clause)
-- inconshreveable/mousetrap (Apache-2.0)
-- ergochat/readline (MIT)
-- pelletier/go-toml/v2 (MIT)
-- go-viper/mapstructure/v2 (MIT)
-- subosito/gotenv (MIT)
-- sagikazarmark/locafero (MIT)
-- sourcegraph/conc (MIT)
-- go.yaml.in/yaml/v3 (Apache-2.0)
-- golang.org/x/crypto (BSD-3-Clause)
-- golang.org/x/sys (BSD-3-Clause)
-- golang.org/x/term (BSD-3-Clause)
-- golang.org/x/text (BSD-3-Clause)
-- golang.org/x/oauth2 (BSD-3-Clause)
-- google.golang.org/api (BSD-3-Clause)
-- google.golang.org/grpc (Apache-2.0)
-- google.golang.org/protobuf (BSD-3-Clause)
-- cloud.google.com/go/* (Apache-2.0)
-- go.opentelemetry.io/* (Apache-2.0)
-- go.opencensus.io (Apache-2.0)
-
-Full license texts are available in the upstream module sources.
+Mansa uses external wireless and Bluetooth projects/specifications for
+behavioral reference only. No Aircrack-ng, BlueZ, Wireshark, Kismet, or other
+security-tool source is copied into this repository. The built-in candidate
+list is small and authored in Mansa; it does not bundle SecLists or another
+external wordlist. The embedded OUI/vendor table is a limited lookup whose
+source and redistribution provenance still need to be recorded.

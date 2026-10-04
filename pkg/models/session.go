@@ -19,38 +19,46 @@ func NewID(prefix string) string {
 
 // Session holds the full state of one wireless assessment run.
 type Session struct {
-	ID           string                `json:"id"`
-	TargetID     string                `json:"target_id"`
-	Target       string                `json:"target"`
-	Interface    string                `json:"interface,omitempty"`
-	Profile      string                `json:"profile,omitempty"`
-	Offline      bool                  `json:"offline"`
-	Start        time.Time             `json:"start"`
-	End          time.Time             `json:"end,omitempty"`
-	Stages       []string              `json:"stages,omitempty"`
-	Errors       []string              `json:"errors,omitempty"`
-	Interfaces   []WirelessInterface   `json:"interfaces,omitempty"`
-	AccessPoints []AccessPoint         `json:"access_points,omitempty"`
-	Stations     []Station             `json:"stations,omitempty"`
-	Observations []WirelessObservation `json:"observations,omitempty"`
-	Traffic      []TrafficObservation  `json:"traffic,omitempty"`
-	Findings     []Finding             `json:"findings,omitempty"`
-	Evidence     []Evidence            `json:"evidence,omitempty"`
-	RiskScore    int                   `json:"risk_score"`
-	RiskLevel    string                `json:"risk_level"`
-	OutputDir    string                `json:"output_dir,omitempty"`
-	Attributes   map[string]string     `json:"attributes,omitempty"`
+	ID               string                              `json:"id"`
+	ExecutionID      string                              `json:"execution_id,omitempty"`
+	TargetID         string                              `json:"target_id"`
+	Target           string                              `json:"target"`
+	Authorization    Authorization                       `json:"authorization"`
+	Interface        string                              `json:"interface,omitempty"`
+	Profile          string                              `json:"profile,omitempty"`
+	Offline          bool                                `json:"offline"`
+	Simulated        bool                                `json:"simulated,omitempty"`
+	Start            time.Time                           `json:"start"`
+	End              time.Time                           `json:"end,omitempty"`
+	Stages           []string                            `json:"stages,omitempty"`
+	Errors           []string                            `json:"errors,omitempty"`
+	Interfaces       []WirelessInterface                 `json:"interfaces,omitempty"`
+	AccessPoints     []AccessPoint                       `json:"access_points,omitempty"`
+	Stations         []Station                           `json:"stations,omitempty"`
+	BluetoothDevices []BluetoothDeviceObservation        `json:"bluetooth_devices,omitempty"`
+	Authentication   []WirelessAuthenticationObservation `json:"wireless_authentication,omitempty"`
+	Observations     []WirelessObservation               `json:"observations,omitempty"`
+	Traffic          []TrafficObservation                `json:"traffic,omitempty"`
+	Findings         []Finding                           `json:"findings,omitempty"`
+	Evidence         []Evidence                          `json:"evidence,omitempty"`
+	Operations       []OperationRecord                   `json:"operations,omitempty"`
+	RiskScore        int                                 `json:"risk_score"`
+	RiskLevel        string                              `json:"risk_level"`
+	OutputDir        string                              `json:"output_dir,omitempty"`
+	Attributes       map[string]string                   `json:"attributes,omitempty"`
 }
 
 // NewSession creates a fresh session for a target.
 func NewSession(t *Target) *Session {
 	s := &Session{
-		ID:         NewID("sess"),
-		TargetID:   t.ID,
-		Target:     t.DisplayName(),
-		Profile:    t.Profile,
-		Start:      time.Now().UTC(),
-		Attributes: make(map[string]string),
+		ID:            NewID("sess"),
+		ExecutionID:   NewID("exec"),
+		TargetID:      t.ID,
+		Target:        t.DisplayName(),
+		Authorization: t.Authorization,
+		Profile:       t.Profile,
+		Start:         time.Now().UTC(),
+		Attributes:    make(map[string]string),
 	}
 	if t.Interface != "" {
 		s.Interface = t.Interface

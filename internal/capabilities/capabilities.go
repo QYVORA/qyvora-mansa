@@ -4,7 +4,13 @@
 package capabilities
 
 import (
+	"fmt"
 	"sort"
+
+	"github.com/QYVORA/qyvora-mansa/internal/active"
+	"github.com/QYVORA/qyvora-mansa/internal/exploitation"
+	"github.com/QYVORA/qyvora-mansa/internal/operation"
+	"github.com/QYVORA/qyvora-mansa/pkg/models"
 )
 
 // ContractVersion is the capability schema version.
@@ -12,20 +18,21 @@ const ContractVersion = "1.0"
 
 // Tool describes one atomic Mansa capability.
 type Tool struct {
-	ID           string   `json:"id"`
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	Framework    string   `json:"framework"`
-	Category     string   `json:"category"`
-	Output       []string `json:"output,omitempty"`
-	Risk         string   `json:"risk"`
-	AuthRequired bool     `json:"authorization_required"`
-	Confirm      bool     `json:"confirmation_required"`
-	Reversible   bool     `json:"reversible"`
-	ChangesState bool     `json:"changes_state"`
-	Targets      []string `json:"target_types,omitempty"`
-	Duration     string   `json:"duration,omitempty"`
-	Schema       Schema   `json:"schema"`
+	ID                  string   `json:"id"`
+	Name                string   `json:"name"`
+	Description         string   `json:"description"`
+	Framework           string   `json:"framework"`
+	Category            string   `json:"category"`
+	Output              []string `json:"output,omitempty"`
+	Risk                string   `json:"risk"`
+	AuthRequired        bool     `json:"authorization_required"`
+	SimulationSupported bool     `json:"simulation_supported,omitempty"`
+	Confirm             bool     `json:"confirmation_required"`
+	Reversible          bool     `json:"reversible"`
+	ChangesState        bool     `json:"changes_state"`
+	Targets             []string `json:"target_types,omitempty"`
+	Duration            string   `json:"duration,omitempty"`
+	Schema              Schema   `json:"schema"`
 }
 
 // Param describes one input parameter.
@@ -118,6 +125,74 @@ func Registry() []Tool {
 			},
 		},
 		{
+			ID:          "mansa.capture.analyze",
+			Name:        "Offline PCAP Analysis",
+			Description: "Analyze access points and observed clients from a PCAP or PCAPNG capture and save an evidence-backed session",
+			Framework:   "mansa", Category: "offline-analysis",
+			Output: []string{"access_points", "stations", "wireless_authentication", "eapol_messages", "four_way_message_sets_observed", "pmkid_observations", "wep_capture_conditions", "findings", "evidence", "session"},
+			Risk:   "low", AuthRequired: false, Reversible: true,
+			Targets: []string{"capture"},
+			Schema: Schema{
+				Input:  []Param{{Name: "pcap_file", Type: "path", Required: true, Description: "PCAP/PCAPNG file with raw 802.11 or radiotap link type"}},
+				Output: []OutputField{{Name: "session", Type: "Session", Description: "saved offline capture analysis session"}, {Name: "four_way_message_sets_observed", Type: "uint64", Description: "M1/M2 and M3/M4 observed with matching replay counters; not MIC or credential verification"}, {Name: "wep_capture_conditions", Type: "WEPObservation", Description: "bounded legacy-IV reuse indicators when a captured AP advertises WEP; not key recovery evidence"}},
+			},
+		},
+		{
+			ID:          "mansa.capture.live",
+			Name:        "Passive Live Capture",
+			Description: "Passively capture raw 802.11 frames from an existing monitor interface to a new PCAP file",
+			Framework:   "mansa", Category: "capture",
+			Output: []string{"pcap_file", "capture_statistics", "session", "evidence", "findings"},
+			Risk:   "medium", AuthRequired: true, Confirm: true, Reversible: true, SimulationSupported: true,
+			Targets: []string{"interface"}, Duration: "maximum 1h",
+			Schema: Schema{
+				Input:  []Param{{Name: "interface", Type: "string", Required: false, Description: "required for live capture; defaults to sim0 in simulation"}, {Name: "monitor-interface", Type: "string", Required: false, Description: "create and remove a temporary monitor interface from interface"}, {Name: "out", Type: "path", Required: false, Description: "new file path; defaults to capture.pcap"}, {Name: "duration", Type: "duration", Required: false, Description: "defaults to 1m; maximum 1h"}, {Name: "channel", Type: "int", Required: false, Description: "fixed radio-reported channel; restores the prior channel after capture"}, {Name: "hop", Type: "[]int", Required: false, Description: "radio-reported channel numbers to cycle through"}, {Name: "dwell", Type: "duration", Required: false, Description: "per-channel dwell duration while hopping"}, {Name: "prefilter", Type: "string", Required: false, Description: "kernel prefilter mode: assessment, management, beacon, or all"}, {Name: "prefilter-address", Type: "string", Required: false, Description: "restrict the kernel prefilter to frames involving this MAC address"}, {Name: "sim", Type: "bool", Required: false}},
+				Output: []OutputField{{Name: "packets", Type: "uint64"}, {Name: "bytes", Type: "uint64"}, {Name: "link_type", Type: "uint32"}},
+			},
+		},
+		{
+			ID: "mansa.bluetooth.advertisement.parse", Name: "Parse BLE Advertisement",
+			Description: "Parse a captured BLE advertising payload into normalized names, service UUIDs, TX power, and manufacturer data",
+			Framework:   "mansa", Category: "offline-analysis", Output: []string{"advertisement"},
+			Risk: "low", AuthRequired: false, Reversible: true, SimulationSupported: true, Targets: []string{"capture"},
+			Schema: Schema{
+				Input:  []Param{{Name: "payload_hex", Type: "hex", Required: false}, {Name: "sim", Type: "bool", Required: false}},
+				Output: []OutputField{{Name: "advertisement", Type: "BLEAdvertisement"}},
+			},
+		},
+		{
+			ID: "mansa.bluetooth.gatt.analyze", Name: "Analyze GATT Metadata",
+			Description: "Review saved GATT metadata for writable characteristics without reported encryption, authentication, or authorization requirements",
+			Framework:   "mansa", Category: "offline-analysis", Output: []string{"findings"},
+			Risk: "low", AuthRequired: false, Reversible: true, SimulationSupported: true, Targets: []string{"capture"},
+			Schema: Schema{
+				Input:  []Param{{Name: "database_json", Type: "path", Required: false}, {Name: "sim", Type: "bool", Required: false}},
+				Output: []OutputField{{Name: "findings", Type: "[]Finding"}},
+			},
+		},
+		{
+			ID: "mansa.bluetooth.adapters", Name: "Discover Bluetooth Adapters",
+			Description: "List Linux HCI adapter metadata from sysfs without powering on, scanning, or connecting",
+			Framework:   "mansa", Category: "discovery", Output: []string{"bluetooth_adapters"},
+			Risk: "low", AuthRequired: false, Reversible: true, Targets: []string{"bluetooth-adapter"},
+			Schema: Schema{Input: []Param{}, Output: []OutputField{{Name: "adapters", Type: "[]BluetoothAdapter"}}},
+		},
+		{
+			ID: "mansa.bluetooth.hci.parse", Name: "Parse HCI Advertising Reports",
+			Description: "Decode captured legacy and extended HCI LE Advertising Report events into normalized BLE device observations",
+			Framework:   "mansa", Category: "offline-analysis", Output: []string{"bluetooth_devices"},
+			Risk: "low", AuthRequired: false, Reversible: true, SimulationSupported: true, Targets: []string{"capture"},
+			Schema: Schema{Input: []Param{{Name: "hci_packet_hex", Type: "hex", Required: false}, {Name: "sim", Type: "bool", Required: false}}, Output: []OutputField{{Name: "observations", Type: "[]BluetoothDeviceObservation"}}},
+		},
+		{
+			ID: "mansa.bluetooth.scan", Name: "Passive BLE Discovery",
+			Description: "Passively scan LE advertisements from an already powered HCI adapter; does not connect to devices or power the adapter",
+			Framework:   "mansa", Category: "discovery", Output: []string{"bluetooth_devices", "session", "evidence"},
+			Risk: "medium", AuthRequired: true, Confirm: true, Reversible: true, SimulationSupported: true,
+			Targets: []string{"bluetooth-adapter"}, Duration: "maximum 10m",
+			Schema: Schema{Input: []Param{{Name: "adapter", Type: "string", Required: true}, {Name: "duration", Type: "duration", Required: false}, {Name: "sim", Type: "bool", Required: false}}, Output: []OutputField{{Name: "devices", Type: "[]BluetoothDeviceObservation"}, {Name: "session", Type: "Session"}}},
+		},
+		{
 			ID:          "mansa.findings",
 			Name:        "View Findings",
 			Description: "Display security findings from the current or latest session",
@@ -170,6 +245,134 @@ func Registry() []Tool {
 			},
 		},
 	}
+	tools = append(tools, operationTools()...)
 	sort.Slice(tools, func(i, j int) bool { return tools[i].ID < tools[j].ID })
 	return tools
+}
+
+// operationRegistry is the single module registry. Every surface — the CLI, the
+// operation executor, and this capability contract — reads it, so a module cannot
+// exist in one place and be missing from another.
+func operationRegistry() *operation.Registry {
+	registry := operation.NewRegistry()
+	for _, module := range active.BluetoothModules() {
+		registry.MustRegister(module)
+	}
+	for _, module := range active.WiFiModules() {
+		registry.MustRegister(module)
+	}
+	exploitation.NewRegistry(registry).MustRegister(exploitation.Builtins()...)
+	return registry
+}
+
+// operationCommand is the CLI verb a class runs under.
+func operationCommand(class models.OperationClass) string {
+	switch class {
+	case models.ClassValidation:
+		return "validate"
+	case models.ClassActiveTest:
+		return "test"
+	case models.ClassExploitation:
+		return "exploit"
+	case models.ClassPassive:
+		return "observe"
+	default:
+		return string(class)
+	}
+}
+
+// operationTools derives the capability contract from the module registry rather
+// than restating it, so the published contract cannot claim a capability the
+// binary does not provide or omit one it does.
+func operationTools() []Tool {
+	metas := operationRegistry().List()
+	tools := make([]Tool, 0, len(metas))
+	for _, meta := range metas {
+		inputs := make([]Param, 0, len(meta.Parameters)+5)
+		inputs = append(inputs,
+			Param{Name: "target", Type: "string", Required: true, Description: "authorized target: a stored target id, a literal address or name, or 'auto' to use the interface"},
+			Param{Name: "interface", Type: "string", Description: "wireless interface the operation uses"},
+			Param{Name: "session", Type: "string", Description: "session supplying collected observations, or 'latest'"},
+			Param{Name: "database", Type: "path", Description: "saved GATT attribute table JSON"},
+			Param{Name: "operator", Type: "string", Description: "identity recorded as responsible for the run"},
+			Param{Name: "sim", Type: "bool", Description: "run the simulation path; no over-air action is taken"},
+			Param{Name: "dry_run", Type: "bool", Description: "print the plan without transmitting or collecting"},
+		)
+		for _, parameter := range meta.Parameters {
+			inputs = append(inputs, Param{
+				Name: parameter.Name, Type: parameter.Kind, Required: parameter.Required,
+				Description: parameter.Description,
+			})
+		}
+		targets := make([]string, 0, len(meta.TargetTypes))
+		for _, targetType := range meta.TargetTypes {
+			targets = append(targets, string(targetType))
+		}
+		description := meta.Description
+		if meta.VulnerabilityClass != "" {
+			description = fmt.Sprintf("%s Vulnerability class: %s. Affected component: %s.",
+				description, meta.VulnerabilityClass, meta.Component)
+		}
+		if len(meta.Prerequisites) > 0 {
+			description = fmt.Sprintf("%s Prerequisites: %s.", description, joinPhrases(meta.Prerequisites))
+		}
+		if len(meta.Limitations) > 0 {
+			description = fmt.Sprintf("%s Stated limitations: %s.", description, joinPhrases(meta.Limitations))
+		}
+		if meta.Cleanup != "" {
+			description = fmt.Sprintf("%s Cleanup: %s.", description, meta.Cleanup)
+		}
+		duration := ""
+		if meta.MaxDuration > 0 {
+			duration = "maximum " + meta.MaxDuration.String()
+		}
+		tools = append(tools, Tool{
+			ID:          "mansa." + operationCommand(meta.Class) + "." + meta.ID,
+			Name:        meta.Title,
+			Description: description,
+			Framework:   "mansa",
+			Category:    string(meta.Class),
+			Output:      []string{"operation_record", "findings", "evidence"},
+			Risk:        meta.Risk,
+			// Every non-simulated run passes the authorization gate, so the
+			// contract reports it for all classes rather than implying that
+			// validation is exempt.
+			AuthRequired:        true,
+			SimulationSupported: meta.SimulationAvailable,
+			Confirm:             meta.Class.RequiresConfirmation(),
+			Reversible:          meta.Reversible,
+			ChangesState:        meta.Class.AffectsTargetEnvironment(),
+			Targets:             targets,
+			Duration:            duration,
+			Schema: Schema{
+				Input: inputs,
+				Output: []OutputField{
+					{Name: "operation", Type: "OperationRecord", Description: "the recorded run, including status, frames transmitted, cleanup state, and evidence"},
+					{Name: "findings", Type: "[]Finding"},
+					{Name: "evidence", Type: "[]Evidence"},
+				},
+			},
+		})
+	}
+	return tools
+}
+
+func joinPhrases(phrases []string) string {
+	switch len(phrases) {
+	case 0:
+		return ""
+	case 1:
+		return phrases[0]
+	case 2:
+		return phrases[0] + " and " + phrases[1]
+	default:
+		out := ""
+		for i, phrase := range phrases[:len(phrases)-1] {
+			if i > 0 {
+				out += ", "
+			}
+			out += phrase
+		}
+		return out + ", and " + phrases[len(phrases)-1]
+	}
 }

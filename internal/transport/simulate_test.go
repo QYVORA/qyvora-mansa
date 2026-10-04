@@ -3,6 +3,8 @@ package transport
 import (
 	"context"
 	"testing"
+
+	"github.com/QYVORA/qyvora-mansa/pkg/models"
 )
 
 func TestSimBackendDeterministic(t *testing.T) {
@@ -102,5 +104,23 @@ func TestSimBackendFixture(t *testing.T) {
 func TestSimBackendCapabilities(t *testing.T) {
 	if caps := New().Capabilities(); len(caps) == 0 {
 		t.Error("sim backend must expose capabilities")
+	}
+}
+
+func TestSimHardwareReportSeparatesSimulationFromHardware(t *testing.T) {
+	report, err := New().HardwareReport(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Provider != "simulation" || len(report.Interfaces) == 0 {
+		t.Fatalf("simulation report = %+v", report)
+	}
+	for _, capability := range report.Capabilities {
+		if capability.Implementation == "simulated" && capability.Hardware != "not_applicable" {
+			t.Errorf("simulated capability reports hardware state: %+v", capability)
+		}
+		if capability.ID == "wifi.raw_capture" && (capability.Implementation != models.CapabilitySimulated || capability.Hardware != models.CapabilityNotApplicable) {
+			t.Errorf("simulated raw capture capability = %+v", capability)
+		}
 	}
 }

@@ -123,13 +123,16 @@ func TestTargetAuthorized(t *testing.T) {
 }
 
 func TestNewSession(t *testing.T) {
-	target := &Target{Type: TargetInterface, Value: "wlan0", Interface: "wlan0"}
+	target := &Target{Type: TargetInterface, Value: "wlan0", Interface: "wlan0", Authorization: Authorization{Granted: true, Scope: "lab wlan0", Method: "explicit"}}
 	s := NewSession(target)
 	if s.ID == "" {
 		t.Error("session missing ID")
 	}
 	if s.Target != "interface:wlan0" || s.Interface != "wlan0" {
 		t.Errorf("session fields: %+v", s)
+	}
+	if !s.Authorization.Granted || s.Authorization.Scope != target.Authorization.Scope {
+		t.Errorf("session did not preserve target authorization: %+v", s.Authorization)
 	}
 	if s.Attributes == nil {
 		t.Error("session Attributes must be initialized")

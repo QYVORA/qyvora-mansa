@@ -25,6 +25,13 @@ func TestExecuteArgsVersion(t *testing.T) {
 	}
 }
 
+func TestExecuteArgsHardwareCapabilitiesSimulation(t *testing.T) {
+	resetTestApp(t)
+	if got := ExecuteArgs(context.Background(), []string{"capabilities", "--hardware", "--sim", "-o", "json"}); got != exitcode.Success {
+		t.Errorf("hardware capabilities exit code = %d", got)
+	}
+}
+
 func TestExecuteArgsUnknownCommandIsUsage(t *testing.T) {
 	if got := ExecuteArgs(context.Background(), []string{"bogus"}); got != exitcode.Usage {
 		t.Errorf("unknown command exit code = %d, want %d", got, exitcode.Usage)

@@ -17,7 +17,9 @@ Key fields:
 | Field              | Meaning                                    |
 |--------------------|--------------------------------------------|
 | `id`               | Unique session identifier (`sess-<hex>`)   |
+| `execution_id`     | Identifier correlating this run with its structured event stream |
 | `target`           | The declared assessment scope               |
+| `authorization`     | Scope and method granted for this run; audit record only |
 | `interface`        | Wireless interface used (if any)            |
 | `offline`          | Whether the session was collected in sim    |
 | `start` / `end`    | Session timestamps                          |
@@ -25,6 +27,8 @@ Key fields:
 | `errors`           | Stage-level errors (if any)                 |
 | `access_points`    | Discovered APs                              |
 | `stations`         | Observed client stations                    |
+| `bluetooth_devices` | BLE observations from live or simulated scans |
+| `wireless_authentication` | EAPOL message and PMKID metadata from captures |
 | `observations`     | RF and behavioral observations              |
 | `findings`         | Evidence-backed security findings           |
 | `evidence`         | Full evidence collection                    |
@@ -61,6 +65,16 @@ command operate on the latest session by default.
 stages without re-collecting wireless data. This is safe, repeatable,
 and produces a new risk score while preserving the original discovery
 data. The stages appended are: `analyze, validate, findings, risk`.
+
+`mansa capture analyze <file>` creates an offline capture session from a
+classic PCAP or PCAPNG file. It imports APs from beacon/probe responses and
+clients from probe, association,
+and data frames, and records the source file name, packet counts, and SHA-256
+capture hash. The hash allows a reviewer to identify the exact source file
+used for analysis. Unprotected EAPOL-Key frames are classified as M1–M4
+observations; PMKID KDEs are represented by SHA-256 only. An observed message
+is not proof of a complete handshake, a working credential, or a recovered
+password.
 
 ## Events
 

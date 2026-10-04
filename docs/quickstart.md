@@ -12,6 +12,19 @@ This discovers interfaces, scans for access points, observes stations,
 runs the analysis rules, validates evidence, and computes risk scoring —
 all without touching live wireless hardware.
 
+Analyze a saved PCAP or PCAPNG capture offline:
+
+```sh
+mansa capture analyze lab.pcap
+mansa findings
+mansa report -f markdown
+```
+
+The capture command reads raw 802.11 or radiotap PCAP/PCAPNG files, imports APs and
+passively observed client relationships from management/data headers, and
+records a SHA-256 hash of the source file as evidence. Probe requests include
+the SSIDs they advertised.
+
 ## One-shot commands
 
 Each pipeline stage is available as a standalone command. The flags
