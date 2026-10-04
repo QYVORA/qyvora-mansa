@@ -82,3 +82,34 @@ type TrafficObservation struct {
 	Count      int       `json:"count,omitempty"`
 	ObservedAt time.Time `json:"observed_at"`
 }
+
+// WPAHandshakeObservation captures the fields required to verify a passphrase
+// against an observed EAPOL handshake. The cryptographic material is limited to
+// what is necessary to perform a local, offline verification.
+type WPAHandshakeObservation struct {
+	SSID      string `json:"ssid"`
+	BSSID     string `json:"bssid"`
+	Anonce    []byte `json:"anonce,omitempty"`
+	Snonce    []byte `json:"snonce,omitempty"`
+	PMKID     []byte `json:"pmkid,omitempty"`
+	MIC       []byte `json:"mic,omitempty"`
+	EAPOLData []byte `json:"eapol_data,omitempty"`
+}
+
+// EAPOLKeyCandidate is a candidate passphrase and its digest. The candidate
+// string itself is never persisted by the verification pipeline.
+type EAPOLKeyCandidate struct {
+	Digest string `json:"digest"`
+}
+
+// EAPOLKeyVerification summarizes the outcome of verifying candidates against
+// an observed handshake. The passphrase itself is never stored.
+type EAPOLKeyVerification struct {
+	SSID                string `json:"ssid"`
+	BSSID               string `json:"bssid"`
+	KDF                 string `json:"kdf"`
+	PMKDerivationValid  bool   `json:"pmk_derivation_valid"`
+	MICVerification     string `json:"mic_verification"`
+	CandidatePassphrase string `json:"-"` // omitted from serialization
+	CandidateDigest     string `json:"candidate_digest"`
+}
