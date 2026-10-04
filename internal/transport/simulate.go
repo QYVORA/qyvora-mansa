@@ -120,7 +120,7 @@ func (b *SimBackend) HardwareReport(_ context.Context) (models.HardwareReport, e
 		return models.HardwareReport{}, err
 	}
 	report := models.HardwareReport{Provider: b.Name(), Interfaces: interfaces}
-	for _, id := range []string{"wifi.interface_discovery", "wifi.ap_enumeration", "wifi.client_observation"} {
+	for _, id := range []string{models.HardwareWiFiInterfaceDiscovery, "wifi.ap_enumeration", "wifi.client_observation"} {
 		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
 			ID: id, Domain: "wifi", Implementation: models.CapabilitySimulated,
 			Hardware: models.CapabilityNotApplicable,
@@ -128,17 +128,17 @@ func (b *SimBackend) HardwareReport(_ context.Context) (models.HardwareReport, e
 		})
 	}
 	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-		ID: "wifi.raw_capture", Domain: "wifi", Implementation: models.CapabilitySimulated,
+		ID: models.HardwareWiFiRawCapture, Domain: "wifi", Implementation: models.CapabilitySimulated,
 		Hardware: models.CapabilityNotApplicable, Reason: "deterministic PCAP fixture frames are emitted without radio hardware",
 	})
 	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-		ID: "wifi.kernel_prefilter", Domain: "wifi", Implementation: models.CapabilitySimulated,
+		ID: models.HardwareWiFiKernelPrefilter, Domain: "wifi", Implementation: models.CapabilitySimulated,
 		Hardware: models.CapabilityNotApplicable,
 		Reason:   "fixture frames are filtered in process, so no kernel filter is installed",
 	})
 	for _, id := range []struct{ name, domain string }{
-		{"wifi.monitor_mode", "wifi"}, {"wifi.frame_injection", "wifi"},
-		{"bluetooth.adapter_discovery", "bluetooth"}, {"bluetooth.discovery", "bluetooth"},
+		{models.HardwareWiFiMonitorMode, "wifi"}, {models.HardwareWiFiFrameInjection, "wifi"},
+		{models.HardwareBluetoothAdapterDiscovery, "bluetooth"}, {models.HardwareBluetoothDiscovery, "bluetooth"},
 	} {
 		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
 			ID: id.name, Domain: id.domain, Implementation: models.CapabilityNotImplemented,
@@ -146,7 +146,7 @@ func (b *SimBackend) HardwareReport(_ context.Context) (models.HardwareReport, e
 			Reason:   "simulation does not emulate this operation",
 		})
 	}
-	for _, id := range []string{"ble.discovery", "ble.gatt"} {
+	for _, id := range []string{models.HardwareBLEDiscovery, "ble.gatt"} {
 		report.Capabilities = append(report.Capabilities, models.HardwareCapability{ID: id, Domain: "ble", Implementation: models.CapabilitySimulated, Hardware: models.CapabilityNotApplicable, Reason: "deterministic BLE fixture supports offline development without adapter access"})
 	}
 	return report, nil

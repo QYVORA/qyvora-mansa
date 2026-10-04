@@ -64,8 +64,84 @@ func newOperationCmd(class models.OperationClass) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(newOperationListCmd(class))
+	for _, meta := range operationRegistry().ByClass(class) {
+		cmd.AddCommand(newOperationModuleCmd(meta))
+	}
 	bindOperationFlags(cmd)
 	return cmd
+}
+
+// newOperationModuleCmd publishes one module as a named subcommand.
+//
+// The module id was already accepted as a positional argument, which meant it
+// ran but was invisible: the shared TUI derives its completion list from the
+// command tree, so a positional id could not be offered, tab-completed, or
+// listed in help. Registering the id as a subcommand puts every module in the
+// tree the TUI walks, with its title as the description shown while typing.
+//
+// The subcommand shares the parent's RunE rather than repeating it, so a module
+// is invoked one way whether it is named or typed.
+func newOperationModuleCmd(meta operation.Meta) *cobra.Command {
+	sub := &cobra.Command{
+		Use:   meta.ID,
+		Short: operationModuleShort(meta),
+		Long:  operationModuleLong(meta),
+		// The class is already pinned by which verb this sits under, so a second
+		// module id is a mistake rather than a different run.
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runOperation(cmd, meta.ID, meta.Class)
+		},
+	}
+	// Flags are declared on the parent and inherited only when the child does not
+	// define its own, so the same bindings are reused here rather than duplicated.
+	bindOperationFlags(sub)
+	return sub
+}
+
+// operationModuleShort is the one-line description the TUI shows while typing.
+func operationModuleShort(meta operation.Meta) string {
+	short := meta.Title
+	if meta.Risk != "" {
+		short += " (" + meta.Risk + " risk)"
+	}
+	return short
+}
+
+// operationModuleLong states what the module answers and what it cannot.
+//
+// The limitations are part of the description rather than a postscript: a
+// module's limits are the reason to choose a different one.
+func operationModuleLong(meta operation.Meta) string {
+	var b strings.Builder
+	b.WriteString(meta.Title + ".\n\n")
+	if meta.Description != "" {
+		b.WriteString(meta.Description + "\n")
+	}
+	if meta.Reversible {
+		b.WriteString("\nThis run changes nothing on the target.\n")
+	} else {
+		b.WriteString("\nThis run is not reversible: anything it transmits has already left the host.\n")
+	}
+	if meta.VulnerabilityClass != "" {
+		b.WriteString(fmt.Sprintf("\nVulnerability class: %s. Affected component: %s.\n", meta.VulnerabilityClass, meta.Component))
+	}
+	if len(meta.RequiredHardware) > 0 {
+		b.WriteString("\nRequires hardware: " + strings.Join(meta.RequiredHardware, ", ") + ".\n")
+	}
+	if meta.MaxFrames > 0 {
+		b.WriteString(fmt.Sprintf("\nFrame ceiling: %d.\n", meta.MaxFrames))
+	}
+	if meta.MaxDuration > 0 {
+		b.WriteString(fmt.Sprintf("\nTime ceiling: %s.\n", meta.MaxDuration))
+	}
+	if len(meta.Limitations) > 0 {
+		b.WriteString("\nLimitations:\n")
+		for _, limitation := range meta.Limitations {
+			b.WriteString("  - " + limitation + "\n")
+		}
+	}
+	return b.String()
 }
 
 // newOperationListCmd prints one class's modules from the registry.

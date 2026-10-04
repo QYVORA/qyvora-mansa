@@ -141,7 +141,7 @@ func (b *LinuxBackend) HardwareReport(ctx context.Context) (models.HardwareRepor
 	}
 	if !iwAvailable() {
 		report.Capabilities = []models.HardwareCapability{{
-			ID: "wifi.interface_discovery", Domain: "wifi",
+			ID: models.HardwareWiFiInterfaceDiscovery, Domain: "wifi",
 			Implementation: models.CapabilityUnavailable, Hardware: models.CapabilityUnknown,
 			Reason: "the iw executable is not installed",
 		}}
@@ -156,11 +156,11 @@ func (b *LinuxBackend) HardwareReport(ctx context.Context) (models.HardwareRepor
 	ifaces, err := b.discoverInterfaces(ctx)
 	if err != nil {
 		report.Capabilities = []models.HardwareCapability{{
-			ID: "wifi.interface_discovery", Domain: "wifi",
+			ID: models.HardwareWiFiInterfaceDiscovery, Domain: "wifi",
 			Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown,
 			Reason: err.Error(),
 		}, {
-			ID: "wifi.ap_enumeration", Domain: "wifi",
+			ID: models.HardwareWiFiAPEnumeration, Domain: "wifi",
 			Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown,
 			Reason: "wireless interfaces could not be queried",
 		}}
@@ -177,18 +177,18 @@ func (b *LinuxBackend) HardwareReport(ctx context.Context) (models.HardwareRepor
 		deviceState, deviceReason = models.CapabilityAvailable, "iw reported one or more wireless interfaces"
 	}
 	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-		ID: "wifi.interface_discovery", Domain: "wifi",
+		ID: models.HardwareWiFiInterfaceDiscovery, Domain: "wifi",
 		Implementation: models.CapabilityAvailable, Hardware: deviceState, Reason: deviceReason,
 	})
 	if len(ifaces) == 0 {
 		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-			ID: "wifi.ap_enumeration", Domain: "wifi", Implementation: models.CapabilityAvailable,
+			ID: models.HardwareWiFiAPEnumeration, Domain: "wifi", Implementation: models.CapabilityAvailable,
 			Hardware: models.CapabilityUnavailable, Reason: "no wireless interfaces are currently visible",
 		})
 	} else {
 		for _, iface := range ifaces {
 			report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-				ID: "wifi.ap_enumeration", Domain: "wifi", Implementation: models.CapabilityAvailable,
+				ID: models.HardwareWiFiAPEnumeration, Domain: "wifi", Implementation: models.CapabilityAvailable,
 				Hardware: models.CapabilityUnknown, Interface: iface.Name,
 				Reason: "interface discovery succeeded; live scan readiness depends on interface state and permissions",
 			})
@@ -207,7 +207,7 @@ func (b *LinuxBackend) HardwareReport(ctx context.Context) (models.HardwareRepor
 	}
 	if captureInterface != "" {
 		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-			ID: "wifi.raw_capture", Domain: "wifi", Implementation: models.CapabilityAvailable,
+			ID: models.HardwareWiFiRawCapture, Domain: "wifi", Implementation: models.CapabilityAvailable,
 			Hardware: models.CapabilityAvailable, Interface: captureInterface,
 			Reason: fmt.Sprintf("raw 802.11 capture is available (link type %d); CAP_NET_RAW is required", captureLinkType),
 		})
@@ -215,7 +215,7 @@ func (b *LinuxBackend) HardwareReport(ctx context.Context) (models.HardwareRepor
 		// reporting an implementation-only capability.
 		supported, reason := probePrefilterSupport(captureInterface, captureLinkType)
 		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-			ID: "wifi.kernel_prefilter", Domain: "wifi", Implementation: models.CapabilityAvailable,
+			ID: models.HardwareWiFiKernelPrefilter, Domain: "wifi", Implementation: models.CapabilityAvailable,
 			Hardware: stateOrUnknown(supported), Interface: captureInterface, Reason: reason,
 		})
 
@@ -265,14 +265,14 @@ func appendBluetoothAdapterCapability(report *models.HardwareReport, adapters []
 		hardware, reason = models.CapabilityAvailable, "one or more Bluetooth HCI adapters were reported by sysfs"
 	}
 	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-		ID: "bluetooth.adapter_discovery", Domain: "bluetooth",
+		ID: models.HardwareBluetoothAdapterDiscovery, Domain: "bluetooth",
 		Implementation: models.CapabilityAvailable, Hardware: hardware, Reason: reason,
 	})
 }
 
 func appendRawCaptureUnknown(report *models.HardwareReport, reason string) {
 	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-		ID: "wifi.raw_capture", Domain: "wifi", Implementation: models.CapabilityAvailable,
+		ID: models.HardwareWiFiRawCapture, Domain: "wifi", Implementation: models.CapabilityAvailable,
 		Hardware: models.CapabilityUnknown, Reason: reason,
 	})
 }
@@ -289,14 +289,14 @@ func appendFrameInjection(report *models.HardwareReport, iface string, tx models
 		reason = tx.WritableReason
 	}
 	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-		ID: "wifi.frame_injection", Domain: "wifi", Implementation: models.CapabilityAvailable,
+		ID: models.HardwareWiFiFrameInjection, Domain: "wifi", Implementation: models.CapabilityAvailable,
 		Hardware: hardware, Interface: iface, Reason: reason,
 	})
 }
 
 func appendFrameInjectionUnknown(report *models.HardwareReport, iface, reason string) {
 	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-		ID: "wifi.frame_injection", Domain: "wifi", Implementation: models.CapabilityAvailable,
+		ID: models.HardwareWiFiFrameInjection, Domain: "wifi", Implementation: models.CapabilityAvailable,
 		Hardware: models.CapabilityUnknown, Interface: iface, Reason: reason,
 	})
 }
@@ -307,15 +307,15 @@ func appendUnimplementedWireless(report *models.HardwareReport) {
 		monitorImplementation, monitorReason = models.CapabilityUnavailable, "iw is not installed; temporary monitor-interface management is unavailable"
 	}
 	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
-		ID: "wifi.monitor_mode", Domain: "wifi", Implementation: monitorImplementation,
+		ID: models.HardwareWiFiMonitorMode, Domain: "wifi", Implementation: monitorImplementation,
 		Hardware: models.CapabilityUnknown, Reason: monitorReason,
 	})
 	report.Capabilities = append(report.Capabilities,
-		models.HardwareCapability{ID: "ble.discovery", Domain: "ble", Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown, Reason: "passive HCI LE scanning is implemented; requires an already powered adapter and HCI socket permissions"},
-		models.HardwareCapability{ID: "ble.gatt", Domain: "ble", Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown, Reason: "offline GATT snapshot analysis is implemented; live GATT enumeration is unavailable"},
+		models.HardwareCapability{ID: models.HardwareBLEDiscovery, Domain: "ble", Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown, Reason: "passive HCI LE scanning is implemented; requires an already powered adapter and HCI socket permissions"},
+		models.HardwareCapability{ID: models.HardwareBLEGATT, Domain: "ble", Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown, Reason: "offline GATT snapshot analysis is implemented; live GATT enumeration is unavailable"},
 	)
 	for _, capability := range []struct{ id, domain string }{
-		{"wifi.client_observation", "wifi"}, {"bluetooth.discovery", "bluetooth"},
+		{models.HardwareWiFiClientObservation, "wifi"}, {models.HardwareBluetoothDiscovery, "bluetooth"},
 	} {
 		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
 			ID: capability.id, Domain: capability.domain,

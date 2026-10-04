@@ -32,7 +32,13 @@ type Tool struct {
 	ChangesState        bool     `json:"changes_state"`
 	Targets             []string `json:"target_types,omitempty"`
 	Duration            string   `json:"duration,omitempty"`
-	Schema              Schema   `json:"schema"`
+	// HardwareCapability names the runtime capability whose observed state
+	// answers "can this host do this?", which is a different question from
+	// whether the binary implements it. Empty means the tool needs no radio:
+	// it reads a file, a session, or a report, so hardware state is not
+	// applicable rather than unknown.
+	HardwareCapability string `json:"hardware_capability,omitempty"`
+	Schema             Schema `json:"schema"`
 }
 
 // Param describes one input parameter.
@@ -71,6 +77,7 @@ func Registry() []Tool {
 				Input:  []Param{{Name: "interface", Type: "string", Required: false, Description: "specific interface to inspect"}},
 				Output: []OutputField{{Name: "interfaces", Type: "[]WirelessInterface", Description: "discovered interfaces"}},
 			},
+			HardwareCapability: models.HardwareWiFiInterfaceDiscovery,
 		},
 		{
 			ID:          "mansa.scan",
@@ -84,6 +91,7 @@ func Registry() []Tool {
 				Input:  []Param{{Name: "interface", Type: "string", Required: true}, {Name: "timeout", Type: "duration", Required: false}},
 				Output: []OutputField{{Name: "access_points", Type: "[]AccessPoint", Description: "discovered access points"}},
 			},
+			HardwareCapability: models.HardwareWiFiAPEnumeration,
 		},
 		{
 			ID:          "mansa.enumerate",
@@ -97,6 +105,7 @@ func Registry() []Tool {
 				Input:  []Param{{Name: "interface", Type: "string", Required: true}, {Name: "ssid", Type: "string"}, {Name: "bssid", Type: "string"}, {Name: "band", Type: "string"}},
 				Output: []OutputField{{Name: "access_points", Type: "[]AccessPoint", Description: "detailed AP inventory"}},
 			},
+			HardwareCapability: models.HardwareWiFiAPEnumeration,
 		},
 		{
 			ID:          "mansa.observe",
@@ -110,6 +119,7 @@ func Registry() []Tool {
 				Input:  []Param{{Name: "interface", Type: "string", Required: true}},
 				Output: []OutputField{{Name: "stations", Type: "[]Station", Description: "wireless clients"}},
 			},
+			HardwareCapability: models.HardwareWiFiClientObservation,
 		},
 		{
 			ID:          "mansa.analyze",
@@ -149,6 +159,7 @@ func Registry() []Tool {
 				Input:  []Param{{Name: "interface", Type: "string", Required: false, Description: "required for live capture; defaults to sim0 in simulation"}, {Name: "monitor-interface", Type: "string", Required: false, Description: "create and remove a temporary monitor interface from interface"}, {Name: "out", Type: "path", Required: false, Description: "new file path; defaults to capture.pcap"}, {Name: "duration", Type: "duration", Required: false, Description: "defaults to 1m; maximum 1h"}, {Name: "channel", Type: "int", Required: false, Description: "fixed radio-reported channel; restores the prior channel after capture"}, {Name: "hop", Type: "[]int", Required: false, Description: "radio-reported channel numbers to cycle through"}, {Name: "dwell", Type: "duration", Required: false, Description: "per-channel dwell duration while hopping"}, {Name: "prefilter", Type: "string", Required: false, Description: "kernel prefilter mode: assessment, management, beacon, or all"}, {Name: "prefilter-address", Type: "string", Required: false, Description: "restrict the kernel prefilter to frames involving this MAC address"}, {Name: "sim", Type: "bool", Required: false}},
 				Output: []OutputField{{Name: "packets", Type: "uint64"}, {Name: "bytes", Type: "uint64"}, {Name: "link_type", Type: "uint32"}},
 			},
+			HardwareCapability: models.HardwareWiFiRawCapture,
 		},
 		{
 			ID: "mansa.bluetooth.advertisement.parse", Name: "Parse BLE Advertisement",
@@ -175,7 +186,8 @@ func Registry() []Tool {
 			Description: "List Linux HCI adapter metadata from sysfs without powering on, scanning, or connecting",
 			Framework:   "mansa", Category: "discovery", Output: []string{"bluetooth_adapters"},
 			Risk: "low", AuthRequired: false, Reversible: true, Targets: []string{"bluetooth-adapter"},
-			Schema: Schema{Input: []Param{}, Output: []OutputField{{Name: "adapters", Type: "[]BluetoothAdapter"}}},
+			Schema:             Schema{Input: []Param{}, Output: []OutputField{{Name: "adapters", Type: "[]BluetoothAdapter"}}},
+			HardwareCapability: models.HardwareBluetoothAdapterDiscovery,
 		},
 		{
 			ID: "mansa.bluetooth.hci.parse", Name: "Parse HCI Advertising Reports",
@@ -190,7 +202,8 @@ func Registry() []Tool {
 			Framework:   "mansa", Category: "discovery", Output: []string{"bluetooth_devices", "session", "evidence"},
 			Risk: "medium", AuthRequired: true, Confirm: true, Reversible: true, SimulationSupported: true,
 			Targets: []string{"bluetooth-adapter"}, Duration: "maximum 10m",
-			Schema: Schema{Input: []Param{{Name: "adapter", Type: "string", Required: true}, {Name: "duration", Type: "duration", Required: false}, {Name: "sim", Type: "bool", Required: false}}, Output: []OutputField{{Name: "devices", Type: "[]BluetoothDeviceObservation"}, {Name: "session", Type: "Session"}}},
+			Schema:             Schema{Input: []Param{{Name: "adapter", Type: "string", Required: true}, {Name: "duration", Type: "duration", Required: false}, {Name: "sim", Type: "bool", Required: false}}, Output: []OutputField{{Name: "devices", Type: "[]BluetoothDeviceObservation"}, {Name: "session", Type: "Session"}}},
+			HardwareCapability: models.HardwareBLEDiscovery,
 		},
 		{
 			ID:          "mansa.findings",
@@ -232,6 +245,30 @@ func Registry() []Tool {
 			},
 		},
 		{
+			ID: "mansa.bluetooth.gatt.enumerate", Name: "Enumerate Live GATT Services",
+			Description: "Enumerate a peer's live GATT services, characteristics, and descriptors over ATT without writing to or pairing with the peer",
+			Framework:   "mansa", Category: "discovery", Output: []string{"gatt_database"},
+			Risk: "low", AuthRequired: true, Reversible: true, Targets: []string{"bluetooth-adapter"},
+			HardwareCapability: models.HardwareBLEGATT,
+			Schema: Schema{
+				Input:  []Param{{Name: "adapter", Type: "string", Required: false}, {Name: "address", Type: "string", Required: true, Description: "peer address to enumerate"}},
+				Output: []OutputField{{Name: "services", Type: "[]GATTService", Description: "services, characteristics, and descriptors the peer exposes"}},
+			},
+		},
+		{
+			ID: "mansa.credentials.verify", Name: "Verify Candidate Passphrases",
+			Description: "Recompute the message integrity code of a captured four-way handshake against candidate passphrases and report which candidate, if any, the peer accepted",
+			Framework:   "mansa", Category: "analysis", Output: []string{"credentials", "findings"},
+			Risk: "medium", AuthRequired: false, Reversible: true, Targets: []string{"capture"},
+			Schema: Schema{
+				Input: []Param{
+					{Name: "handshake", Type: "path", Required: true, Description: "captured handshake material"},
+					{Name: "wordlist", Type: "path", Required: false, Description: "candidate passphrase list"},
+				},
+				Output: []OutputField{{Name: "result", Type: "CredentialResult", Description: "which candidate matched, or that none did"}},
+			},
+		},
+		{
 			ID:          "mansa.assess",
 			Name:        "Full Assessment Pipeline",
 			Description: "Run the complete wireless security assessment pipeline",
@@ -243,6 +280,7 @@ func Registry() []Tool {
 				Input:  []Param{{Name: "interface", Type: "string"}, {Name: "sim", Type: "bool"}},
 				Output: []OutputField{{Name: "session", Type: "Session", Description: "completed session"}},
 			},
+			HardwareCapability: models.HardwareWiFiInterfaceDiscovery,
 		},
 	}
 	tools = append(tools, operationTools()...)
@@ -344,6 +382,7 @@ func operationTools() []Tool {
 			ChangesState:        meta.Class.AffectsTargetEnvironment(),
 			Targets:             targets,
 			Duration:            duration,
+			HardwareCapability:  hardwareCapabilityFor(meta),
 			Schema: Schema{
 				Input: inputs,
 				Output: []OutputField{
@@ -355,6 +394,37 @@ func operationTools() []Tool {
 		})
 	}
 	return tools
+}
+
+// hardwareCapabilityFor names the runtime capability that answers whether a
+// host can run an operation module.
+//
+// It is derived from what the module declares rather than asserted beside it, so
+// the published hardware claim cannot contradict the module's own declaration.
+//
+// Transmit is checked first because it is the requirement that actually refuses
+// a run: a host that cannot write frames fails every transmitting module
+// whatever its monitor-mode state is. A module scoped to a Bluetooth adapter
+// needs the adapter, since it queries the controller. Anything else operates on
+// a capture, a session, or a saved file and needs no radio at all, which is
+// reported as empty rather than guessed at from the domain: two of the BLE
+// modules review recorded data, and calling them radio-dependent would have
+// claimed a dependency they do not have.
+func hardwareCapabilityFor(meta operation.Meta) string {
+	for _, requirement := range meta.RequiredHardware {
+		switch requirement {
+		case operation.HardwareRawTransmit:
+			return models.HardwareWiFiFrameInjection
+		case operation.HardwareMonitorMode:
+			return models.HardwareWiFiMonitorMode
+		}
+	}
+	for _, targetType := range meta.TargetTypes {
+		if targetType == models.TargetBluetoothAdapter {
+			return models.HardwareBluetoothAdapterDiscovery
+		}
+	}
+	return ""
 }
 
 func joinPhrases(phrases []string) string {

@@ -53,3 +53,27 @@ type TransmitCapability struct {
 	WritableReason   string `json:"writable_reason,omitempty"`
 	OverAirConfirmed bool   `json:"over_air_confirmed"`
 }
+
+// Hardware capability identifiers.
+//
+// The capability contract and the provider reports are written by different
+// packages and joined by these identifiers, so they are constants rather than
+// string literals written independently on each side. A literal on either side
+// compiles fine and then silently fails to join, which would leave every
+// capability reporting "unknown" for hardware while looking like it had been
+// asked.
+const (
+	HardwareWiFiInterfaceDiscovery = "wifi.interface_discovery"
+	HardwareWiFiAPEnumeration      = "wifi.ap_enumeration"
+	HardwareWiFiClientObservation  = "wifi.client_observation"
+	HardwareWiFiRawCapture         = "wifi.raw_capture"
+	HardwareWiFiKernelPrefilter    = "wifi.kernel_prefilter"
+	HardwareWiFiFrameInjection     = "wifi.frame_injection"
+	HardwareWiFiMonitorMode        = "wifi.monitor_mode"
+
+	HardwareBluetoothAdapterDiscovery = "bluetooth.adapter_discovery"
+	HardwareBluetoothDiscovery        = "bluetooth.discovery"
+
+	HardwareBLEDiscovery = "ble.discovery"
+	HardwareBLEGATT      = "ble.gatt"
+)

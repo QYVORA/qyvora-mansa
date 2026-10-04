@@ -43,7 +43,7 @@ func newCapabilitiesCmd() *cobra.Command {
 				fmt.Fprintf(cmd.OutOrStdout(), "Mansa %s — wireless security capability contract\n\n", version.Version)
 				rows := make([][]string, 0, len(list))
 				for _, tool := range list {
-					state, reason := hardwareStateFor(tool.ID, report)
+					state, reason := hardwareStateFor(tool.HardwareCapability, report)
 					if reason != "" {
 						rows = append(rows, []string{tool.ID, tool.Category, tool.Risk, boolStr(tool.AuthRequired), string(state), reason})
 						continue
@@ -92,18 +92,31 @@ func hardwareReport(ctx context.Context, simulated bool) (models.HardwareReport,
 	return reporter.HardwareReport(ctx)
 }
 
-// hardwareStateFor reports what the host offers for one capability id.
+// hardwareStateFor reports what the host offers for one capability.
 //
-// The state is copied from the provider's own report rather than inferred here,
-// so a capability the host cannot satisfy is reported with the provider's reason
-// instead of a guess.
-func hardwareStateFor(id string, report models.HardwareReport) (models.CapabilityState, string) {
+// The join is on the capability's declared HardwareCapability, never on the
+// capability's own id. The two namespaces are deliberately different: the
+// contract publishes tools such as mansa.scan, while a provider reports what it
+// can do such as wifi.ap_enumeration. Joining the two on id alone matches
+// nothing, which would report every capability as unknown while looking exactly
+// like a successful query.
+//
+// A tool that declares no hardware reads a file, a session, or a report, so it
+// reports not_applicable rather than unknown. Calling that unknown would suggest
+// the host might still be missing something it never needed.
+func hardwareStateFor(hardwareCapability string, report models.HardwareReport) (models.CapabilityState, string) {
+	if hardwareCapability == "" {
+		return models.CapabilityNotApplicable, "reads a file, a session, or a report; it needs no radio"
+	}
 	for _, capability := range report.Capabilities {
-		if capability.ID == id {
+		if capability.ID == hardwareCapability {
 			return capability.Hardware, capability.Reason
 		}
 	}
-	return models.CapabilityUnknown, ""
+	// The provider did not report a state for a capability the contract claims
+	// depends on it. That is a real gap, so it says so rather than appearing
+	// merely unavailable.
+	return models.CapabilityUnknown, "the provider reported no state for " + hardwareCapability
 }
 
 func boolStr(b bool) string {
