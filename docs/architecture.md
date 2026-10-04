@@ -125,7 +125,7 @@ come from that registry so the machine output and TUI remain aligned.
 
 `../qyvora-dist/tools.def` is the source of truth for installers, release
 metadata, and desktop entries. It currently builds Mansa from the repository
-root, while the common conformance runner builds `./cmd/mansa`; both entry
+root, and the common conformance runner now builds that same root package; the single entry
 points currently call the same CLI. Its Mansa desktop description and keywords
 also describe generic attack-surface mapping rather than wireless assessment.
 These are distribution-repository follow-ups and should be changed there, then
@@ -173,6 +173,6 @@ shipped capabilities until the audit evidence demonstrates them.
 
 The sibling distribution repository is outside this repository's writable
 scope. When working there, reconcile `Q_MAIN_PKG` with the chosen canonical
-entry point (`.` or `./cmd/mansa`) and update the Mansa desktop description and
+entry point (`.`) and update the Mansa desktop description and
 keywords to identify wireless security assessment. Regenerate outputs from
 `tools.def`; do not hand-edit generated installer files.
