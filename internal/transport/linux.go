@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -42,22 +41,7 @@ func (b *LinuxBackend) CaptureLinkType(iface string) (uint32, error) {
 	if err != nil {
 		return 0, fmt.Errorf("find interface %q: %w", iface, err)
 	}
-	typeBytes, err := os.ReadFile(fmt.Sprintf("/sys/class/net/%s/type", device.Name))
-	if err != nil {
-		return 0, fmt.Errorf("read interface type: %w", err)
-	}
-	linkType, err := strconv.Atoi(strings.TrimSpace(string(typeBytes)))
-	if err != nil {
-		return 0, fmt.Errorf("parse interface type: %w", err)
-	}
-	switch linkType {
-	case 801: // ARPHRD_IEEE80211
-		return 105, nil // DLT_IEEE802_11
-	case 803: // ARPHRD_IEEE80211_RADIOTAP
-		return 127, nil // DLT_IEEE802_11_RADIO
-	default:
-		return 0, fmt.Errorf("interface %q is not exposing raw 802.11 frames (kernel type %d)", iface, linkType)
-	}
+	return linkTypeForDevice(iface, device)
 }
 
 // Capture reads frames passively from an already configured raw 802.11
@@ -163,6 +147,9 @@ func (b *LinuxBackend) HardwareReport(ctx context.Context) (models.HardwareRepor
 		}}
 		appendRawCaptureUnknown(&report, "wireless interfaces could not be queried without iw")
 		appendBluetoothAdapterCapability(&report, adapters, adapterErr)
+		// Transmit is implemented, so it stays reported as implemented even with
+		// no interface to probe; dropping it here would misdescribe the build.
+		appendFrameInjectionUnknown(&report, "", "no wireless interface could be selected without iw")
 		appendUnimplementedWireless(&report)
 		return report, nil
 	}
@@ -179,6 +166,7 @@ func (b *LinuxBackend) HardwareReport(ctx context.Context) (models.HardwareRepor
 		}}
 		appendRawCaptureUnknown(&report, "wireless interfaces could not be queried")
 		appendBluetoothAdapterCapability(&report, adapters, adapterErr)
+		appendFrameInjectionUnknown(&report, "", "no wireless interface could be selected")
 		appendUnimplementedWireless(&report)
 		return report, nil
 	}
@@ -230,10 +218,28 @@ func (b *LinuxBackend) HardwareReport(ctx context.Context) (models.HardwareRepor
 			ID: "wifi.kernel_prefilter", Domain: "wifi", Implementation: models.CapabilityAvailable,
 			Hardware: stateOrUnknown(supported), Interface: captureInterface, Reason: reason,
 		})
+
 	} else if len(ifaces) == 0 {
 		appendRawCaptureUnknown(&report, "no wireless interfaces were reported by iw")
 	} else {
 		appendRawCaptureUnknown(&report, "requires a preconfigured monitor interface: "+captureReason)
+	}
+	// Transmit is probed independently of capture: a managed interface that
+	// cannot run a capture prefilter can still accept raw writes, so failing the
+	// capture probe must not be allowed to hide a working transmit path.
+	txInterface := captureInterface
+	if txInterface == "" && len(ifaces) > 0 {
+		txInterface = ifaces[0].Name
+	}
+	if txInterface != "" {
+		tx, txErr := b.ProbeTransmit(txInterface)
+		if txErr != nil {
+			appendFrameInjectionUnknown(&report, txInterface, txErr.Error())
+		} else {
+			appendFrameInjection(&report, txInterface, tx)
+		}
+	} else {
+		appendFrameInjectionUnknown(&report, "", "no wireless interface was available to probe")
 	}
 	appendBluetoothAdapterCapability(&report, adapters, adapterErr)
 	appendUnimplementedWireless(&report)
@@ -271,6 +277,30 @@ func appendRawCaptureUnknown(report *models.HardwareReport, reason string) {
 	})
 }
 
+// appendFrameInjection reports a probed transmit path. A refused write is
+// unavailable rather than unknown: the probe distinguishes a missing permission
+// from an unsupported kernel, and both the implementation and the refusal reason
+// are known.
+func appendFrameInjection(report *models.HardwareReport, iface string, tx models.TransmitCapability) {
+	hardware := models.CapabilityAvailable
+	reason := fmt.Sprintf("raw frame writes are accepted on %s; %s; over-air delivery is not confirmed by this probe", iface, tx.WritableReason)
+	if !tx.Writable {
+		hardware = models.CapabilityUnavailable
+		reason = tx.WritableReason
+	}
+	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+		ID: "wifi.frame_injection", Domain: "wifi", Implementation: models.CapabilityAvailable,
+		Hardware: hardware, Interface: iface, Reason: reason,
+	})
+}
+
+func appendFrameInjectionUnknown(report *models.HardwareReport, iface, reason string) {
+	report.Capabilities = append(report.Capabilities, models.HardwareCapability{
+		ID: "wifi.frame_injection", Domain: "wifi", Implementation: models.CapabilityAvailable,
+		Hardware: models.CapabilityUnknown, Interface: iface, Reason: reason,
+	})
+}
+
 func appendUnimplementedWireless(report *models.HardwareReport) {
 	monitorImplementation, monitorReason := models.CapabilityAvailable, "temporary monitor interfaces can be created with iw when the radio/driver supports them; runtime adapter validation is required"
 	if !iwAvailable() {
@@ -285,8 +315,7 @@ func appendUnimplementedWireless(report *models.HardwareReport) {
 		models.HardwareCapability{ID: "ble.gatt", Domain: "ble", Implementation: models.CapabilityAvailable, Hardware: models.CapabilityUnknown, Reason: "offline GATT snapshot analysis is implemented; live GATT enumeration is unavailable"},
 	)
 	for _, capability := range []struct{ id, domain string }{
-		{"wifi.client_observation", "wifi"}, {"wifi.frame_injection", "wifi"},
-		{"bluetooth.discovery", "bluetooth"},
+		{"wifi.client_observation", "wifi"}, {"bluetooth.discovery", "bluetooth"},
 	} {
 		report.Capabilities = append(report.Capabilities, models.HardwareCapability{
 			ID: capability.id, Domain: capability.domain,

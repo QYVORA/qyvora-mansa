@@ -1,25 +1,5 @@
 package transport
 
-<<<<<<< HEAD
-import "testing"
-
-func TestCompilePrefilterReturnsProgramsForSupportedModes(t *testing.T) {
-	for _, tc := range []struct {
-		mode   PrefilterMode
-		expect []byte
-	}{
-		{PrefilterAll, allFramesProgram()},
-		{PrefilterManagement, managementFramesProgram("")},
-		{PrefilterBeacon, beaconFramesProgram("")},
-		{PrefilterAssessment, assessmentFramesProgram("")},
-	} {
-		instr, err := CompilePrefilter(PrefilterSpec{Mode: tc.mode})
-		if err != nil {
-			t.Fatalf("%s: %v", tc.mode, err)
-		}
-		if len(instr.Program) == 0 {
-			t.Errorf("%s returned empty program", tc.mode)
-=======
 import (
 	"testing"
 
@@ -332,17 +312,10 @@ func TestPrefilterSemantics(t *testing.T) {
 					}
 				}
 			}
->>>>>>> a2c1b0a173d509f150da492bc516485fa70f804e
 		}
 	}
 }
 
-<<<<<<< HEAD
-func TestCompilePrefilterRejectsUnknownMode(t *testing.T) {
-	_, err := CompilePrefilter(PrefilterSpec{Mode: "unknown"})
-	if err == nil {
-		t.Fatal("expected an error for an unknown prefilter mode")
-=======
 func TestPrefilterAddressRestriction(t *testing.T) {
 	eapol := snap(0x888e)
 	for _, linkType := range []uint32{linkTypeIEEE80211Capture, linkTypeRadiotapCapture} {
@@ -425,6 +398,5 @@ func TestPrefilterProgramsStayWithinKernelLimits(t *testing.T) {
 				t.Fatalf("compile %+v does not end in a verdict", spec)
 			}
 		}
->>>>>>> a2c1b0a173d509f150da492bc516485fa70f804e
 	}
 }

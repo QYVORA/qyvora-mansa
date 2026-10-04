@@ -13,15 +13,16 @@ import (
 func testAP(bssid, ssid string, ch int, band string, sig int, sec models.SecurityAdvertisement) models.AccessPoint {
 	now := time.Now().UTC()
 	return models.AccessPoint{
-		BSSID:       bssid,
-		SSID:        ssid,
-		Channel:     ch,
-		Band:        band,
-		Signal:      sig,
-		Security:    sec,
-		FirstSeen:   now,
-		LastSeen:    now,
-		IsSimulated: true,
+		BSSID:           bssid,
+		SSID:            ssid,
+		Channel:         ch,
+		Band:            band,
+		Signal:          sig,
+		SignalAvailable: true,
+		Security:        sec,
+		FirstSeen:       now,
+		LastSeen:        now,
+		IsSimulated:     true,
 	}
 }
 

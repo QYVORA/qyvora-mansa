@@ -12,12 +12,18 @@ type WirelessInterface struct {
 
 // AccessPoint is a discovered wireless access point.
 type AccessPoint struct {
-	BSSID              string                `json:"bssid"`
-	SSID               string                `json:"ssid"`
-	Channel            int                   `json:"channel"`
-	Frequency          int                   `json:"frequency"`
-	Band               string                `json:"band"`
-	Signal             int                   `json:"signal"`
+	BSSID     string `json:"bssid"`
+	SSID      string `json:"ssid"`
+	Channel   int    `json:"channel"`
+	Frequency int    `json:"frequency"`
+	Band      string `json:"band"`
+	Signal    int    `json:"signal"`
+	// SignalAvailable reports whether Signal was actually measured. It is
+	// false when the access point came from a capture that carried no radiotap
+	// signal field, in which case Signal is zero and means nothing: a zero
+	// reading is the strongest possible value, so treating an absent
+	// measurement as zero would report an unmeasured AP as a very close one.
+	SignalAvailable    bool                  `json:"signal_available,omitempty"`
 	Security           SecurityAdvertisement `json:"security"`
 	Vendor             string                `json:"vendor,omitempty"`
 	Capabilities       string                `json:"capabilities,omitempty"`

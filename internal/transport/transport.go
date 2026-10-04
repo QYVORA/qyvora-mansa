@@ -79,3 +79,26 @@ type CaptureStats struct {
 	Packets  uint64
 	Bytes    uint64
 }
+
+// BLEScanProvider passively collects LE advertising reports from an already
+// powered adapter. It is separate from BluetoothAdapterProvider because listing
+// adapters opens nothing while scanning enables scanning on one.
+//
+// The visit callback receives reports as they arrive, so a caller can stream a
+// long scan rather than buffering it.
+type BLEScanProvider interface {
+	ScanBLE(ctx context.Context, adapter string, visit func(models.BluetoothDeviceObservation) error) (BLEScanStats, error)
+}
+
+// BLEScanStats counts what a BLE scan observed.
+//
+// Malformed counts reports the provider could not decode. It is reported
+// separately rather than folded into Reports so a decode gap is visible instead
+// of looking like a quiet radio.
+type BLEScanStats struct {
+	// Reports is the number of advertising reports delivered to the caller.
+	Reports uint64
+
+	// Malformed is the number of reports that arrived but could not be decoded.
+	Malformed uint64
+}

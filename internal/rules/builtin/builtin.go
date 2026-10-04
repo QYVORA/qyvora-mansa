@@ -411,7 +411,11 @@ func signalAnomalyRule() *rules.Rule {
 		Detect: func(ctx *rules.Context) []models.Finding {
 			var findings []models.Finding
 			for _, ap := range ctx.APs {
-				if ap.Signal > -20 {
+				// A signal that was never measured is not a strong signal. The
+				// zero value is the strongest reading there is, so an AP from a
+				// capture with no radiotap signal field would otherwise be
+				// reported as adjacent.
+				if ap.SignalAvailable && ap.Signal > -20 {
 					findings = append(findings, models.Finding{
 						ID:          models.BuildFindingID("WLAN-020", "rf-analysis"),
 						Title:       fmt.Sprintf("Very strong signal: %s", ap.SSID),

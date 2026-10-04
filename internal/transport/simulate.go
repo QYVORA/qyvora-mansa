@@ -166,90 +166,90 @@ func (b *SimBackend) Scan(_ context.Context, _ string, _ int) ([]models.AccessPo
 	aps := []models.AccessPoint{
 		// Open networks
 		{BSSID: "02:00:00:00:00:01", SSID: "CoffeeShop_Free", Channel: 1, Frequency: 2412, Band: "2.4GHz",
-			Signal: -55, Security: models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"},
+			Signal: -55, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"},
 			Vendor: "Ubiquiti", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 		{BSSID: "02:00:00:00:00:02", SSID: "Airport_WiFi", Channel: 6, Frequency: 2437, Band: "2.4GHz",
-			Signal: -48, Security: models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"},
+			Signal: -48, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"},
 			Vendor: "Cisco", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// WEP network
 		{BSSID: "02:00:00:00:00:03", SSID: "LegacyPrinter", Channel: 11, Frequency: 2462, Band: "2.4GHz",
-			Signal: -62, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WEP"}},
+			Signal: -62, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WEP"}},
 			Vendor: "Unknown", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// WPA1-TKIP
 		{BSSID: "02:00:00:00:00:04", SSID: "OldRouter", Channel: 3, Frequency: 2422, Band: "2.4GHz",
-			Signal: -70, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA"}, Cipher: "TKIP", KeyMgmt: "PSK"},
+			Signal: -70, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA"}, Cipher: "TKIP", KeyMgmt: "PSK"},
 			Vendor: "D-Link", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// WPA2-TKIP (weak, PMF off)
 		{BSSID: "02:00:00:00:00:05", SSID: "HomeOffice_WiFi", Channel: 8, Frequency: 2447, Band: "2.4GHz",
-			Signal: -45, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "TKIP", KeyMgmt: "PSK"},
+			Signal: -45, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "TKIP", KeyMgmt: "PSK"},
 			Vendor: "Netgear", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// WPA2-CCMP (good)
 		{BSSID: "02:00:00:00:00:06", SSID: "CorpNet_Secure", Channel: 36, Frequency: 5180, Band: "5GHz",
-			Signal: -38, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "PSK", PMF: true},
+			Signal: -38, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "PSK", PMF: true},
 			Vendor: "Aruba", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// WPA3 (best)
 		{BSSID: "02:00:00:00:00:07", SSID: "SmartHome_G5", Channel: 149, Frequency: 5745, Band: "5GHz",
-			Signal: -50, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "CCMP"}, PMF: true},
+			Signal: -50, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "CCMP"}, PMF: true},
 			Vendor: "TP-Link", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// WPS enabled, PMF off
 		{BSSID: "02:00:00:00:00:08", SSID: "Guest_Net", Channel: 13, Frequency: 2472, Band: "2.4GHz",
-			Signal: -58, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "PSK", WPS: true},
+			Signal: -58, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "PSK", WPS: true},
 			Vendor: "ASUSTeK", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// Hidden SSID open
 		{BSSID: "02:00:00:00:00:09", SSID: "", Channel: 6, Frequency: 2437, Band: "2.4GHz",
-			Signal: -80, Security: models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"},
+			Signal: -80, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"},
 			Vendor: "Raspberry Pi", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// Enterprise WPA2-EAP
 		{BSSID: "02:00:00:00:00:0A", SSID: "Enterprise_WLAN", Channel: 44, Frequency: 5220, Band: "5GHz",
-			Signal: -42, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "EAP", Enterprise: true, PMF: true},
+			Signal: -42, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "EAP", Enterprise: true, PMF: true},
 			Vendor: "Cisco", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// 6 GHz WPA3
 		{BSSID: "02:00:00:00:00:0B", SSID: "UltraFast_6E", Channel: 9, Frequency: 5995, Band: "6GHz",
-			Signal: -35, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "CCMP"}, PMF: true},
+			Signal: -35, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "CCMP"}, PMF: true},
 			Vendor: "Intel", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 		{BSSID: "02:00:00:00:00:0C", SSID: "6G_Premium", Channel: 37, Frequency: 6135, Band: "6GHz",
-			Signal: -40, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "GCMP"}, PMF: true},
+			Signal: -40, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "GCMP"}, PMF: true},
 			Vendor: "Intel", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 		{BSSID: "02:00:00:00:00:0D", SSID: "Lab_6E", Channel: 61, Frequency: 6255, Band: "6GHz",
-			Signal: -47, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "CCMP"}, PMF: true},
+			Signal: -47, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "CCMP"}, PMF: true},
 			Vendor: "Ubiquiti", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 		{BSSID: "02:00:00:00:00:0E", SSID: "Dev_6GHz", Channel: 85, Frequency: 6375, Band: "6GHz",
-			Signal: -52, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "OWE"}, PMF: true},
+			Signal: -52, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "OWE"}, PMF: true},
 			Vendor: "Espressif", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 		{BSSID: "02:00:00:00:00:0F", SSID: "Test_6E", Channel: 113, Frequency: 6515, Band: "6GHz",
-			Signal: -55, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "CCMP"}, PMF: true},
+			Signal: -55, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "CCMP"}, PMF: true},
 			Vendor: "Cisco", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// Very strong signal (triggers signal anomaly)
 		{BSSID: "02:00:00:00:00:10", SSID: "Nearby_Router", Channel: 1, Frequency: 2412, Band: "2.4GHz",
-			Signal: -12, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "PSK", PMF: true},
+			Signal: -12, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "PSK", PMF: true},
 			Vendor: "D-Link", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// Evil-twin clone of CoffeeShop_Free (open, different transmitter)
 		{BSSID: "02:00:00:00:00:11", SSID: "CoffeeShop_Free", Channel: 6, Frequency: 2437, Band: "2.4GHz",
-			Signal: -60, Security: models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"},
+			Signal: -60, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"},
 			Vendor: "Generic", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// Phishing pair: open twin of the secured lounge (same SSID)
 		{BSSID: "02:00:00:00:00:12", SSID: "Secured_Lounge", Channel: 100, Frequency: 5500, Band: "5GHz",
-			Signal: -46, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "CCMP"}, PMF: true},
+			Signal: -46, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "SAE", "CCMP"}, PMF: true},
 			Vendor: "Aruba", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 		{BSSID: "02:00:00:00:00:13", SSID: "Secured_Lounge", Channel: 3, Frequency: 2422, Band: "2.4GHz",
-			Signal: -52, Security: models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"},
+			Signal: -52, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: false, Auth: "OPEN"},
 			Vendor: "Generic", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// Duplicate SSID across bands (legitimate controller, weaker story: PMF on)
 		{BSSID: "02:00:00:00:00:14", SSID: "Guest_Net", Channel: 44, Frequency: 5220, Band: "5GHz",
-			Signal: -47, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "PSK", PMF: true},
+			Signal: -47, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "PSK", PMF: true},
 			Vendor: "ASUSTeK", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// Hidden secured network, PMF off
@@ -259,12 +259,12 @@ func (b *SimBackend) Scan(_ context.Context, _ string, _ int) ([]models.AccessPo
 
 		// Modern-looking WPA2-CCMP but PMF disabled
 		{BSSID: "02:00:00:00:00:16", SSID: "GuestLegacy", Channel: 5, Frequency: 2432, Band: "2.4GHz",
-			Signal: -64, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "PSK"},
+			Signal: -64, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA2"}, Cipher: "CCMP", KeyMgmt: "PSK"},
 			Vendor: "TP-Link", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 
 		// WPA3/WPA2 transition AP allowing downgrade
 		{BSSID: "02:00:00:00:00:17", SSID: "Hybrid_Edge", Channel: 40, Frequency: 5200, Band: "5GHz",
-			Signal: -68, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "WPA2"}, Auth: "SAE",
+			Signal: -68, SignalAvailable: true, Security: models.SecurityAdvertisement{Enabled: true, Protocols: []string{"WPA3", "WPA2"}, Auth: "SAE",
 				KeyMgmt: "PSK", AKMSuites: []string{"SAE", "PSK"}, Transition: true},
 			Vendor: "Ubiquiti", FirstSeen: now, LastSeen: now, Source: "simulation", IsSimulated: true},
 	}
