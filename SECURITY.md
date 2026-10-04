@@ -22,7 +22,7 @@ business days.
 
 ## Contact
 
-- **Website:** https://qyvora.netlify.app
+- **Website:** https://qyvora.org
 - **Security contact:** qyvorasec@gmail.com
 - **Organisation:** QYVORA OffSec — Tamale, Ghana
 
