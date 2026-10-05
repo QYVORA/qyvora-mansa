@@ -60,8 +60,14 @@ func runTUI(root *cobra.Command, ctx context.Context) error {
 	}
 
 	code, err := tui.Run(tui.Config{
-		Title:   "QYVORA / MANSA",
-		Version: version.String(),
+		Title: "QYVORA / MANSA",
+		// The bare semantic version, not version.String(). The interface's
+		// Version field is a single-line label that shares one row with the
+		// title and the status pill; String() is a four-line block ending in
+		// "User:", so passing it pushed the identity off screen and left the
+		// header reading "User: unknown". The full block still belongs to
+		// `mansa version`.
+		Version: version.Version,
 		Runner:  runner,
 		Out:     os.Stdout,
 		// The tool's own progress output is discarded rather than shown: it
