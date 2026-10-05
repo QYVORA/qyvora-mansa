@@ -106,15 +106,22 @@ func (u *UI) Err(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "%s%s\n", u.Red("[!] "), fmt.Sprintf(format, args...))
 }
 
-// Banner renders the canonical Mansa banner with colored glyphs.
+// Banner renders the canonical Mansa banner in the QYVORA accent.
+//
+// The colour comes from banner.Colorize, which is the single place the accent
+// is defined, but the console's own colour decision still wins: when colours
+// are off the plain art is printed even on a terminal that could show it, so
+// NO_COLOR is honoured by this surface too.
 func (u *UI) Banner(tagline string) {
 	fmt.Fprintln(u.w)
-	lines := strings.Split(banner.Art, "\n")
-	for _, line := range lines {
-		if strings.TrimSpace(line) == "" && len(line) > 0 && (line == lines[0] || line == lines[len(lines)-1]) {
+	for _, line := range strings.Split(banner.Art, "\n") {
+		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		fmt.Fprintln(u.w, u.bannerColorize(line))
+		if u.color {
+			line = banner.Colorize(line)
+		}
+		fmt.Fprintln(u.w, line)
 	}
 	fmt.Fprintln(u.w)
 	if tagline != "" {
@@ -185,25 +192,9 @@ func (u *UI) Prompt(name, target string) string {
 	return u.BoldTeal(name+" ") + u.DimWhite("("+target+") ") + u.Teal("> ")
 }
 
-func (u *UI) bannerColorize(line string) string {
-	if !u.color {
-		return line
-	}
-	var b strings.Builder
-	for _, r := range line {
-		switch r {
-		case '@', '%', '#':
-			b.WriteString(ansiTeal + string(r) + ansiReset)
-		case '*', '+':
-			b.WriteString(ansiDark + string(r) + ansiReset)
-		case '=', '-', ':', '.':
-			b.WriteString(ansiDim + ansiWhite + string(r) + ansiReset)
-		default:
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
+// bannerColorize is gone. It mapped '@', '%' and '#' to teal, '*' and '+' to a
+// darker teal and the punctuation to dim white, a palette that belonged to the
+// hand-drawn emblem this banner no longer uses.
 
 func padTo(s string, width int) string {
 	if len(s) >= width {
