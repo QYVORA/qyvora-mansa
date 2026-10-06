@@ -33,6 +33,7 @@ func usagef(format string, a ...any) error {
 
 // App is the shared application state for both CLI and console.
 var appState *app.AppState
+var updateFlag bool
 
 // consoleExitCode carries the console's exit code into ExecuteArgs.
 var consoleExitCode int
@@ -158,6 +159,7 @@ to evaluate.`,
 		},
 	}
 	pf := root.PersistentFlags()
+	pf.BoolVar(&updateFlag, "update", false, "update the CLI to the latest official release")
 	pf.StringVarP(&formatFlag, "output", "o", "", "output format: terminal, json, yaml, markdown, html")
 	pf.BoolVar(&quietFlag, "quiet", false, "suppress non-error output")
 	pf.BoolVarP(&verboseFlag, "verbose", "v", false, "verbose output")
