@@ -102,19 +102,20 @@ const (
 
 // Finding is one evidence-backed security observation.
 type Finding struct {
-	ID             string        `json:"id"`
-	RuleID         string        `json:"rule_id"`
-	Title          string        `json:"title"`
-	Category       string        `json:"category"`
-	Severity       Severity      `json:"severity"`
-	Confidence     Confidence    `json:"confidence"`
-	Description    string        `json:"description"`
-	Target         string        `json:"target"`
-	Status         FindingStatus `json:"status"`
-	Recommendation string        `json:"recommendation,omitempty"`
-	Evidence       []Evidence    `json:"evidence,omitempty"`
-	References     []string      `json:"references,omitempty"`
-	Timestamp      time.Time     `json:"timestamp"`
+	ID             string         `json:"id"`
+	RuleID         string         `json:"rule_id"`
+	Title          string         `json:"title"`
+	Category       string         `json:"category"`
+	Severity       Severity       `json:"severity"`
+	Confidence     Confidence     `json:"confidence"`
+	Description    string         `json:"description"`
+	Target         string         `json:"target"`
+	Status         FindingStatus  `json:"status"`
+	Recommendation string         `json:"recommendation,omitempty"`
+	Evidence       []Evidence     `json:"evidence,omitempty"`
+	References     []string       `json:"references,omitempty"`
+	Timestamp      time.Time      `json:"timestamp"`
+	Tier           OperationClass `json:"tier,omitempty"` // Which tier produced this finding
 }
 
 // Fingerprint returns a deterministic content hash for deduplication.
@@ -138,4 +139,20 @@ func BuildFindingID(ruleID, category string) string {
 	}
 	h := sha256.Sum256([]byte(ruleID))
 	return fmt.Sprintf("WLAN-%s-%X", prefix, h[:4])
+}
+
+// TierPrefix returns the display prefix for a finding's tier
+func (f Finding) TierPrefix() string {
+	switch f.Tier {
+	case ClassPassive:
+		return "[RECON]"
+	case ClassValidation:
+		return "[VALIDATION]"
+	case ClassActiveTest:
+		return "[TECHNIQUE]"
+	case ClassExploitation:
+		return "[EXPLOIT]"
+	default:
+		return ""
+	}
 }

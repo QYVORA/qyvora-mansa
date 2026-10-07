@@ -38,11 +38,15 @@ func newFindingsCmd() *cobra.Command {
 			fmt.Fprintf(cmd.OutOrStdout(), "Findings for session %s (risk %d/100 %s)\n\n", sess.ID, sess.RiskScore, sess.RiskLevel)
 			rows := make([][]string, 0, len(sess.Findings))
 			for _, f := range sess.SortedFindings() {
+				tier := f.TierPrefix()
+				if tier != "" {
+					tier = tier + " "
+				}
 				rows = append(rows, []string{
-					f.ID, f.RuleID, f.Title, string(f.Severity), string(f.Confidence), f.Target,
+					f.ID, tier + f.Title, string(f.Severity), string(f.Confidence), f.Target,
 				})
 			}
-			appState.Printer.PrintTable([]string{"id", "rule", "title", "severity", "confidence", "target"}, rows)
+			appState.Printer.PrintTable([]string{"id", "finding", "severity", "confidence", "target"}, rows)
 			return nil
 		},
 	}

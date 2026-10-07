@@ -100,6 +100,188 @@ completion    Generate shell completion scripts
 Global flags: `-o/--output`, `-y/--authorized`, `-v/--verbose`,
 `-q/--quiet`, `--events`, `--dry-run`.
 
+## Three-Tier Assessment Framework
+
+Mansa provides complete wireless security assessment across three distinct tiers:
+
+### Tier 1: Reconnaissance (Passive/Semi-Passive)
+
+**Purpose**: Discovery and enumeration without state changes on targets
+
+**Modules**:
+- `discover` - Wireless interface discovery
+- `scan` - Network and access point scanning
+- `enumerate` - Detailed AP inventory
+- `observe` - Client/station observation
+- `capture.analyze` - Offline PCAP analysis
+- `bluetooth.scan` - BLE device discovery
+
+**Characteristics**:
+- No target state modification
+- Minimal detection risk
+- No authorization required for offline analysis
+- Authorization required for active scanning
+
+**Example**:
+```sh
+mansa scan --target <network> --authorized
+mansa enumerate --target <network> --authorized
+```
+
+### Tier 2: Security Techniques (Active Analysis)
+
+**Purpose**: Active security posture assessment and weakness identification
+
+**Modules**:
+- `analyze` - Security rule engine
+- `validate` - Evidence validation modules
+- `test` - Bounded active security tests
+- `bluetooth.gatt.enumerate` - Live GATT enumeration
+- `credentials.verify` - Credential validation
+
+**Characteristics**:
+- Active probing within authorized scope
+- Detectable but non-hostile patterns
+- Produces findings with evidence
+- Authorization required for active modules
+
+**Example**:
+```sh
+# Active security testing
+mansa test wifi.authentication.probe --target <network> --authorized
+mansa test wifi.management.protection.probe --target <network> --authorized
+
+# Analysis and validation
+mansa analyze
+mansa validate ble.gatt.access.control --target <device> --authorized
+```
+
+### Tier 3: Exploitation (Proof-of-Concept Validation)
+
+**Purpose**: Controlled validation of identified weaknesses
+
+**Modules**:
+- `exploit.wifi.beacon.spoof.lab` - Beacon injection PoC
+- `exploit.wifi.management.disruption.lab` - Management frame PoC
+
+**Characteristics**:
+- Aggressive, obviously adversarial activity
+- Lab environment only (`.lab` suffix)
+- Immediate stop after proof
+- Explicit authorization + lab parameter required
+- High detection risk
+
+**Example**:
+```sh
+# Lab environment exploitation (authorization required)
+mansa exploit wifi.beacon.spoof.lab \
+  --target <authorized-lab-target> \
+  --interface wlan0 \
+  --authorized
+
+# Dry-run to preview impact
+mansa exploit wifi.management.disruption.lab \
+  --target <target> \
+  --dry-run \
+  --authorized
+```
+
+**Safety boundaries**:
+- ≤256 frames per run
+- ≤30 second listen window
+- Single proof-of-concept only, no sustained attacks
+- No post-exploitation or pivoting
+- Detailed evidence collection
+
+See [EXPLOITATION.md](EXPLOITATION.md) for complete exploitation guide.
+
+## OPSEC & Operational Profiles
+
+### Noise Levels
+
+Every module declares its operational noise level for OPSEC awareness:
+
+| Level | Description | Detectability | Default Allowed |
+|-------|-------------|---------------|-----------------|
+| **passive** | Observation only, no emissions | Minimal | ✅ Yes |
+| **low** | Blends with normal client behavior | Low | ✅ Yes |
+| **moderate** | Active probing, detectable patterns | Medium | ✅ Yes (standard) |
+| **aggressive** | Obviously adversarial activity | High | ❌ No (requires explicit) |
+
+**View noise levels**:
+```sh
+# Capabilities command shows tier and noise for each module
+mansa capabilities
+```
+
+### Operational Profiles
+
+Three profiles control which modules run based on noise tolerance:
+
+#### Stealth Profile
+
+**Best for**: Covert assessments, minimal footprint
+
+```sh
+mansa assess --profile stealth --target <network> --authorized
+```
+
+- **Allowed noise**: passive, low only
+- **Rate limiting**: 5 seconds between operations
+- **Timing jitter**: enabled (anti-fingerprinting)
+- **Max parallel**: 1 (single-threaded)
+- **Exploitation**: Filtered out (aggressive noise blocked)
+
+#### Standard Profile (Default)
+
+**Best for**: Balanced security assessment
+
+```sh
+mansa assess --target <network> --authorized
+# or explicitly:
+mansa assess --profile standard --target <network> --authorized
+```
+
+- **Allowed noise**: passive, low, moderate
+- **Rate limiting**: 1 second between operations
+- **Timing jitter**: enabled
+- **Max parallel**: 4
+- **Exploitation**: Not included by default
+
+#### Aggressive Profile
+
+**Best for**: Comprehensive assessment with exploitation
+
+```sh
+mansa assess --profile aggressive --target <network> --authorized
+```
+
+- **Allowed noise**: all levels (passive through aggressive)
+- **Rate limiting**: 100ms between operations
+- **Timing jitter**: disabled (speed priority)
+- **Max parallel**: 16
+- **Exploitation**: Included
+
+### Dry-Run Mode
+
+Preview any operation without execution:
+
+```sh
+mansa test wifi.authentication.probe \
+  --target <network> \
+  --dry-run \
+  --authorized
+```
+
+**Dry-run shows**:
+- Tier classification ([RECON], [TECHNIQUE], [EXPLOIT])
+- Noise level and OPSEC footprint
+- Authorization requirements
+- Target impact assessment
+- Reversibility status
+- Expected frame count and duration
+- Hardware capabilities required
+
 ## Capability contract
 
 24 capabilities, published as a machine-readable contract. The list is
@@ -113,32 +295,38 @@ mansa capabilities --hardware   # what this machine can actually do
 mansa capabilities --sim        # simulated-data availability
 ```
 
-| ID | Category | Risk | Auth |
-|---|---|---|---|
-| `mansa.discover` | discovery | low | no |
-| `mansa.scan` | enumeration | medium | yes |
-| `mansa.enumerate` | enumeration | low | yes |
-| `mansa.observe` | observation | low | yes |
-| `mansa.analyze` | analysis | low | no |
-| `mansa.capture.analyze` | offline-analysis | low | no |
-| `mansa.capture.live` | capture | medium | yes |
-| `mansa.bluetooth.adapters` | discovery | low | no |
-| `mansa.bluetooth.advertisement.parse` | offline-analysis | low | no |
-| `mansa.bluetooth.gatt.analyze` | offline-analysis | low | no |
-| `mansa.bluetooth.hci.parse` | offline-analysis | low | no |
-| `mansa.bluetooth.scan` | discovery | medium | yes |
-| `mansa.findings` | reporting | low | no |
-| `mansa.evidence` | reporting | low | no |
-| `mansa.report` | reporting | low | no |
-| `mansa.assess` | assessment | medium | yes |
-| `mansa.validate.ble.adapter.capabilities` | validation | low | yes |
-| `mansa.validate.ble.advertising.exposure` | validation | low | yes |
-| `mansa.validate.ble.gatt.access.control` | validation | low | yes |
-| `mansa.test.wifi.inject.verify` | active_test | medium | yes |
-| `mansa.test.wifi.management.protection.probe` | active_test | medium | yes |
-| `mansa.test.wifi.authentication.probe` | active_test | medium | yes |
-| `mansa.exploit.wifi.management.disruption.lab` | exploitation | high | yes |
-| `mansa.exploit.wifi.beacon.spoof.lab` | exploitation | high | yes |
+**Enhanced output with tier and noise level**:
+
+| ID | Tier | Noise | Risk | Auth |
+|---|---|---|---|---|
+| `mansa.discover` | - | - | low | no |
+| `mansa.scan` | - | - | medium | yes |
+| `mansa.enumerate` | - | - | low | yes |
+| `mansa.observe` | - | - | low | yes |
+| `mansa.analyze` | - | - | low | no |
+| `mansa.capture.analyze` | - | - | low | no |
+| `mansa.capture.live` | - | - | medium | yes |
+| `mansa.bluetooth.adapters` | - | - | low | no |
+| `mansa.bluetooth.advertisement.parse` | - | - | low | no |
+| `mansa.bluetooth.gatt.analyze` | - | - | low | no |
+| `mansa.bluetooth.gatt.enumerate` | - | - | low | yes |
+| `mansa.bluetooth.hci.parse` | - | - | low | no |
+| `mansa.bluetooth.scan` | - | - | medium | yes |
+| `mansa.findings` | - | - | low | no |
+| `mansa.evidence` | - | - | low | no |
+| `mansa.report` | - | - | low | no |
+| `mansa.credentials.verify` | - | - | medium | no |
+| `mansa.assess` | - | - | medium | yes |
+| `mansa.validate.ble.adapter.capabilities` | validation | passive | low | yes |
+| `mansa.validate.ble.advertising.exposure` | validation | passive | low | yes |
+| `mansa.validate.ble.gatt.access.control` | validation | passive | low | yes |
+| `mansa.test.wifi.inject.verify` | active_test | low | medium | yes |
+| `mansa.test.wifi.management.protection.probe` | active_test | low | medium | yes |
+| `mansa.test.wifi.authentication.probe` | active_test | moderate | medium | yes |
+| `mansa.exploit.wifi.management.disruption.lab` | exploitation | aggressive | high | yes |
+| `mansa.exploit.wifi.beacon.spoof.lab` | exploitation | aggressive | high | yes |
+
+**Note**: Modules without a tier/noise are pipeline commands or reporting tools (not operation modules).
 
 `--hardware` separates *implemented* from *observed available*; a
 capability can be implemented and still unavailable on the current host.

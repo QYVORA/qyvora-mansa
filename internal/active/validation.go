@@ -66,8 +66,11 @@ func (m *adapterCapabilities) Meta() operation.Meta {
 		Description: "Report the controller version, address, supported commands, LE features, and LE buffer size using read-only HCI commands.",
 		Domain:      "bluetooth",
 		Class:       models.ClassValidation,
-		Risk:        "low",
-		Reversible:  true,
+		// Passive noise: reads local controller metadata using HCI commands; no
+		// transmission or observable behavior.
+		NoiseLevel: models.NoiseLevelPassive,
+		Risk:       "low",
+		Reversible: true,
 		// The fixture answers from recorded controller metadata, so a simulated
 		// run exercises the reporting path without an adapter.
 		SimulationAvailable: true,
@@ -163,8 +166,10 @@ func (m *advertisingExposure) Meta() operation.Meta {
 		Description: "Review collected BLE advertisements for local names, service UUIDs, TX power, and manufacturer data that support tracking.",
 		Domain:      "bluetooth",
 		Class:       models.ClassValidation,
-		Risk:        "low",
-		Reversible:  true,
+		// Passive noise: analyzes previously collected data; no new transmission.
+		NoiseLevel: models.NoiseLevelPassive,
+		Risk:       "low",
+		Reversible: true,
 		// The fixture supplies a deterministic advertisement set, so the review
 		// path is exercised without scanning.
 		SimulationAvailable: true,
@@ -274,8 +279,11 @@ func (m *gattAccessControl) Meta() operation.Meta {
 		Description: "Review a saved GATT attribute table for writable characteristics with no reported encryption, authentication, or authorization requirement.",
 		Domain:      "bluetooth",
 		Class:       models.ClassValidation,
-		Risk:        "low",
-		Reversible:  true,
+		// Passive noise: analyzes previously saved GATT database; no device
+		// interaction.
+		NoiseLevel: models.NoiseLevelPassive,
+		Risk:       "low",
+		Reversible: true,
 		// The fixture supplies a deterministic attribute table, so the review is
 		// exercisable without a device.
 		SimulationAvailable: true,

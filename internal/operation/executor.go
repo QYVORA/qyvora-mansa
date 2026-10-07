@@ -401,9 +401,46 @@ func cleanupState(outcome Outcome) models.CleanupState {
 // be refused. It reports what was decided, never what was observed: nothing was
 // transmitted and nothing was collected.
 func planNotes(meta Meta, req Request) []string {
-	notes := []string{
-		fmt.Sprintf("dry run: %s was not transmitted and nothing was collected", meta.ID),
+	// Tier indicator for terminal output
+	tierPrefix := ""
+	switch meta.Class {
+	case models.ClassValidation:
+		tierPrefix = "[RECON] "
+	case models.ClassActiveTest:
+		tierPrefix = "[TECHNIQUE] "
+	case models.ClassExploitation:
+		tierPrefix = "[EXPLOIT] "
 	}
+
+	notes := []string{
+		fmt.Sprintf("dry run: %s%s (%s) was planned but not executed", tierPrefix, meta.Title, meta.ID),
+		fmt.Sprintf("tier: %s | noise level: %s | risk: %s", meta.Class, meta.NoiseLevel, meta.Risk),
+	}
+
+	// OPSEC footprint summary
+	opsecDesc := ""
+	switch meta.NoiseLevel {
+	case models.NoiseLevelPassive:
+		opsecDesc = "passive observation, no detectable emissions"
+	case models.NoiseLevelLow:
+		opsecDesc = "low noise, blends with normal client behavior"
+	case models.NoiseLevelModerate:
+		opsecDesc = "moderate noise, detectable but non-hostile patterns"
+	case models.NoiseLevelAggressive:
+		opsecDesc = "aggressive noise, obviously adversarial activity"
+	default:
+		opsecDesc = "noise level unknown"
+	}
+	notes = append(notes, fmt.Sprintf("OPSEC footprint: %s", opsecDesc))
+
+	// Authorization and impact
+	if meta.Class.AffectsTargetEnvironment() {
+		notes = append(notes, "impact: emits radio traffic at authorized target")
+	} else {
+		notes = append(notes, "impact: read-only observation or analysis")
+	}
+	notes = append(notes, fmt.Sprintf("reversible: %v | authorization: required for non-simulated runs", meta.Reversible))
+
 	if len(meta.Parameters) > 0 {
 		names := make([]string, 0, len(meta.Parameters))
 		for _, parameter := range meta.Parameters {
@@ -420,6 +457,9 @@ func planNotes(meta Meta, req Request) []string {
 	}
 	if meta.MaxFrames > 0 {
 		notes = append(notes, fmt.Sprintf("frame ceiling: %d", meta.MaxFrames))
+	}
+	if meta.MaxDuration > 0 {
+		notes = append(notes, fmt.Sprintf("duration limit: %s", meta.MaxDuration))
 	}
 	if len(meta.RequiredHardware) > 0 {
 		notes = append(notes, "requires: "+joinList(meta.RequiredHardware))

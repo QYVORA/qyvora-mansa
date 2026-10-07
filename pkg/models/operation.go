@@ -2,6 +2,38 @@ package models
 
 import "time"
 
+// NoiseLevel describes the operational footprint of a module from an OPSEC
+// perspective. It answers: how visible is this module to a defending
+// adversary, assuming they are monitoring the target environment?
+//
+// Noise level is independent of risk: a passive-noise reconnaissance module may
+// still carry medium risk if it discloses the assessment, while an
+// aggressive-noise exploit definitionally carries high risk because it affects
+// the target.
+type NoiseLevel string
+
+const (
+	// NoiseLevelPassive observes only, emitting nothing detectable.
+	NoiseLevelPassive NoiseLevel = "passive"
+	// NoiseLevelLow emits minimal detectable activity: a single probe frame, a
+	// standards-compliant association, or enumeration that blends with normal
+	// client behavior.
+	NoiseLevelLow NoiseLevel = "low"
+	// NoiseLevelModerate emits detectable non-hostile activity: rapid scanning,
+	// repeated probes, or traffic patterns distinguishable from a normal client
+	// but not inherently adversarial.
+	NoiseLevelModerate NoiseLevel = "moderate"
+	// NoiseLevelAggressive emits obviously hostile activity: frame injection,
+	// denial of service, impersonation, or any transmission that unambiguously
+	// signals an active assessment.
+	NoiseLevelAggressive NoiseLevel = "aggressive"
+)
+
+// String renders the noise level name used in records, events, and CLI output.
+func (n NoiseLevel) String() string {
+	return string(n)
+}
+
 // OperationClass distinguishes how strongly an operation affects the target
 // environment. The class is part of Mansa's security model: it decides whether
 // an explicit authorization gate applies and how a result may be described.

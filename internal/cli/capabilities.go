@@ -43,14 +43,22 @@ func newCapabilitiesCmd() *cobra.Command {
 				fmt.Fprintf(cmd.OutOrStdout(), "Mansa %s — wireless security capability contract\n\n", version.Version)
 				rows := make([][]string, 0, len(list))
 				for _, tool := range list {
+					tier := string(tool.Tier)
+					if tier == "" {
+						tier = "-"
+					}
+					noise := string(tool.NoiseLevel)
+					if noise == "" {
+						noise = "-"
+					}
 					state, reason := hardwareStateFor(tool.HardwareCapability, report)
 					if reason != "" {
-						rows = append(rows, []string{tool.ID, tool.Category, tool.Risk, boolStr(tool.AuthRequired), string(state), reason})
+						rows = append(rows, []string{tool.ID, tier, noise, tool.Risk, boolStr(tool.AuthRequired), string(state), reason})
 						continue
 					}
-					rows = append(rows, []string{tool.ID, tool.Category, tool.Risk, boolStr(tool.AuthRequired), string(state), ""})
+					rows = append(rows, []string{tool.ID, tier, noise, tool.Risk, boolStr(tool.AuthRequired), string(state), ""})
 				}
-				appState.Printer.PrintTable([]string{"id", "category", "risk", "auth", "hardware", "reason"}, rows)
+				appState.Printer.PrintTable([]string{"id", "tier", "noise", "risk", "auth", "hardware", "reason"}, rows)
 				return nil
 			}
 			if appState.Printer.Format() != "terminal" {
@@ -60,9 +68,17 @@ func newCapabilitiesCmd() *cobra.Command {
 			fmt.Fprintf(cmd.OutOrStdout(), "Mansa %s — wireless security contract\n\n", version.Version)
 			rows := make([][]string, 0, len(list))
 			for _, c := range list {
-				rows = append(rows, []string{c.ID, c.Category, c.Risk, boolStr(c.AuthRequired)})
+				tier := string(c.Tier)
+				if tier == "" {
+					tier = "-"
+				}
+				noise := string(c.NoiseLevel)
+				if noise == "" {
+					noise = "-"
+				}
+				rows = append(rows, []string{c.ID, tier, noise, c.Risk, boolStr(c.AuthRequired)})
 			}
-			appState.Printer.PrintTable([]string{"id", "category", "risk", "auth"}, rows)
+			appState.Printer.PrintTable([]string{"id", "tier", "noise", "risk", "auth"}, rows)
 			return nil
 		},
 	}

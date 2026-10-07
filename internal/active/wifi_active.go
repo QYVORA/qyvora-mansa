@@ -29,7 +29,7 @@ func WiFiModules() []operation.Module {
 // The transmitter address is a declared parameter rather than a value read from
 // the adapter, because the frame bytes are recorded: a frame built from whatever
 // address the host happened to have would make the recorded bytes unreproducible.
-func transmitCommon(id, title, description, source string, required []operation.Parameter, optional []operation.Parameter, maxFrames int, maxDuration time.Duration, prerequisites []string) operation.Meta {
+func transmitCommon(id, title, description, source string, required []operation.Parameter, optional []operation.Parameter, maxFrames int, maxDuration time.Duration, prerequisites []string, noiseLevel models.NoiseLevel) operation.Meta {
 	parameters := []operation.Parameter{
 		{Name: "source", Kind: "mac", Required: true, Description: "transmitter MAC address placed in the constructed frames"},
 	}
@@ -44,6 +44,7 @@ func transmitCommon(id, title, description, source string, required []operation.
 		Description: description,
 		Domain:      "wifi",
 		Class:       models.ClassActiveTest,
+		NoiseLevel:  noiseLevel,
 		Risk:        "medium",
 		// An active test emits radio traffic at a target, so it is not reversible
 		// in the sense of being undone; it is bounded and scoped.
@@ -93,6 +94,8 @@ func (m *injectVerify) Meta() operation.Meta {
 			"The target is an authorized test network or an isolated laboratory.",
 			"The interface is in monitor mode and can accept raw frame writes.",
 		},
+		// Low noise: sends a small number of standards-compliant probe requests.
+		models.NoiseLevelLow,
 	)
 }
 
@@ -193,6 +196,9 @@ func (m *managementProtectionProbe) Meta() operation.Meta {
 			"The station is one the operator is authorized to test.",
 			"The access point is the authorized target.",
 		},
+		// Low noise: sends standards-compliant probe requests. While targeted at
+		// one station, these blend with normal client scanning behavior.
+		models.NoiseLevelLow,
 	)
 }
 
@@ -300,6 +306,10 @@ func (m *authenticationProbe) Meta() operation.Meta {
 			"The access point is the authorized target.",
 			"No credential is supplied: the probe uses the open system algorithm only.",
 		},
+		// Moderate noise: sends authentication frames which are more unusual than
+		// normal client probing. A rapid sequence suggests testing rather than
+		// legitimate client behavior.
+		models.NoiseLevelModerate,
 	)
 }
 

@@ -355,8 +355,15 @@ func (a *AppState) printDryRunPlan(t *models.Target, sim bool) {
 	fmt.Fprintf(w, "  Target:       %s\n", t.DisplayName())
 	fmt.Fprintf(w, "  Interface:    %s\n", t.Interface)
 	fmt.Fprintf(w, "  Simulation:   %v\n", sim)
+	fmt.Fprintf(w, "  Profile:      standard (passive, low, moderate noise allowed)\n")
 	fmt.Fprintf(w, "  Stages:       %s\n", strings.Join(pipeline.StageOrder, " → "))
 	fmt.Fprintf(w, "  Backend:      %s\n", a.Backend.Name())
+	fmt.Fprintf(w, "\nOperational profile: standard\n")
+	fmt.Fprintf(w, "  - Noise levels: passive, low, moderate\n")
+	fmt.Fprintf(w, "  - Rate limiting: 1s between operations\n")
+	fmt.Fprintf(w, "  - Timing jitter: enabled\n")
+	fmt.Fprintf(w, "  - Max parallel: 4\n")
+	fmt.Fprintf(w, "\nUse --profile stealth for more restrictive OPSEC.\n")
 }
 
 func (a *AppState) writeReport(_ context.Context, sess *models.Session) error {

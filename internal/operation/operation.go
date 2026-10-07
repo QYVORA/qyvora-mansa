@@ -84,6 +84,13 @@ type Meta struct {
 	// validation module and inherit the wrong gates.
 	Class models.OperationClass
 
+	// NoiseLevel describes the operational footprint from an OPSEC perspective:
+	// how visible is this module to a defending adversary monitoring the target
+	// environment. It ranges from passive (observe only) to aggressive (frame
+	// injection, DoS). Used for operational profile filtering and dry-run
+	// footprint disclosure.
+	NoiseLevel models.NoiseLevel
+
 	// Risk is the published risk rating: low, medium, high, critical.
 	Risk string
 

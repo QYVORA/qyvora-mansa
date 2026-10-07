@@ -18,20 +18,22 @@ const ContractVersion = "1.0"
 
 // Tool describes one atomic Mansa capability.
 type Tool struct {
-	ID                  string   `json:"id"`
-	Name                string   `json:"name"`
-	Description         string   `json:"description"`
-	Framework           string   `json:"framework"`
-	Category            string   `json:"category"`
-	Output              []string `json:"output,omitempty"`
-	Risk                string   `json:"risk"`
-	AuthRequired        bool     `json:"authorization_required"`
-	SimulationSupported bool     `json:"simulation_supported,omitempty"`
-	Confirm             bool     `json:"confirmation_required"`
-	Reversible          bool     `json:"reversible"`
-	ChangesState        bool     `json:"changes_state"`
-	Targets             []string `json:"target_types,omitempty"`
-	Duration            string   `json:"duration,omitempty"`
+	ID                  string                `json:"id"`
+	Name                string                `json:"name"`
+	Description         string                `json:"description"`
+	Framework           string                `json:"framework"`
+	Category            string                `json:"category"`
+	Output              []string              `json:"output,omitempty"`
+	Risk                string                `json:"risk"`
+	NoiseLevel          models.NoiseLevel     `json:"noise_level,omitempty"`
+	Tier                models.OperationClass `json:"tier,omitempty"`
+	AuthRequired        bool                  `json:"authorization_required"`
+	SimulationSupported bool                  `json:"simulation_supported,omitempty"`
+	Confirm             bool                  `json:"confirmation_required"`
+	Reversible          bool                  `json:"reversible"`
+	ChangesState        bool                  `json:"changes_state"`
+	Targets             []string              `json:"target_types,omitempty"`
+	Duration            string                `json:"duration,omitempty"`
 	// HardwareCapability names the runtime capability whose observed state
 	// answers "can this host do this?", which is a different question from
 	// whether the binary implements it. Empty means the tool needs no radio:
@@ -383,6 +385,8 @@ func operationTools() []Tool {
 			Targets:             targets,
 			Duration:            duration,
 			HardwareCapability:  hardwareCapabilityFor(meta),
+			NoiseLevel:          meta.NoiseLevel,
+			Tier:                meta.Class,
 			Schema: Schema{
 				Input: inputs,
 				Output: []OutputField{
