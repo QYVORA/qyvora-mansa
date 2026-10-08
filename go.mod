@@ -3,7 +3,7 @@ module github.com/QYVORA/qyvora-mansa
 go 1.26.5
 
 require (
-	github.com/QYVORA/qyvora-tui v0.8.0
+	github.com/QYVORA/qyvora-tui v0.9.0
 	github.com/muesli/termenv v0.16.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.20.1
@@ -49,5 +49,3 @@ require (
 	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/QYVORA/qyvora-tui => ../qyvora-tui
