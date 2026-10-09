@@ -114,7 +114,7 @@ func (u *UI) Err(format string, args ...any) {
 // NO_COLOR is honoured by this surface too.
 func (u *UI) Banner(tagline string) {
 	fmt.Fprintln(u.w)
-	for _, line := range strings.Split(banner.Art, "\n") {
+	for _, line := range banner.RenderCLI() {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}

@@ -68,6 +68,7 @@ func runTUI(root *cobra.Command, ctx context.Context) error {
 		// header reading "User: unknown". The full block still belongs to
 		// `mansa version`.
 		Version: version.Version,
+		Banner:  tui.ToolBanner("MANSA", "Authorized wireless security assessment framework"),
 		Runner:  runner,
 		Out:     os.Stdout,
 		// The tool's own progress output is discarded rather than shown: it
