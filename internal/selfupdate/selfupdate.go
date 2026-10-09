@@ -53,29 +53,33 @@ type release struct {
 	} `json:"assets"`
 }
 
-// Run checks for updates and installs if available.
-// releaseArtifactName maps a Go target onto the exact release asset name for a
-// tool. macOS is published as "macos", never "darwin", and Windows assets carry
-// a ".exe" suffix.
+// releaseArtifactName maps a release version plus a Go target onto the exact
+// release asset name for a tool. The release pipeline publishes versioned
+// archives ("{tool}_{version}_{os}_{arch}.tar.gz", .zip on windows) where the
+// version is the tag with its leading "v" stripped, macOS is published as
+// "macos" (never "darwin"), and Android is published as "android".
 //
 // Android/Termux needs no special case: Go reports GOOS "android" for a
-// GOOS=android build, so this resolves to "{tool}-android-arm64". A linux/arm64
-// asset is never substituted, because Android's bionic linker rejects the
-// ET_EXEC binary a GOOS=linux build produces.
+// GOOS=android build, so this resolves to "{tool}_<version>_android_arm64".
+// A linux/arm64 asset is never substituted, because Android's bionic linker
+// rejects the ET_EXEC binary a GOOS=linux build produces.
 //
 // It is a package-level function so release_artifact_name_test.go can pin the
 // naming this package shares with the release workflow and install.sh.
-func releaseArtifactName(tool, goos, goarch string) string {
+func releaseArtifactName(version, tool, goos, goarch string) string {
 	os := goos
 	if os == "darwin" {
 		os = "macos"
 	}
-	name := tool + "-" + os + "-" + goarch
+	ver := strings.TrimPrefix(strings.TrimPrefix(version, "v"), "V")
+	name := tool + "_" + ver + "_" + os + "_" + goarch
 	if goos == "windows" {
-		name += ".exe"
+		return name + ".zip"
 	}
-	return name
+	return name + ".tar.gz"
 }
+
+// Run checks for updates and installs if available.
 
 func Run(ctx context.Context, cfg Config, out io.Writer) Result {
 	current := cfg.CurrentVersion()
@@ -98,7 +102,7 @@ func Run(ctx context.Context, cfg Config, out io.Writer) Result {
 		return Result{Status: StatusCurrent, Current: current, Latest: latest, Error: "cannot determine executable path"}
 	}
 	exePath, _ = filepath.EvalSymlinks(exePath)
-	artifactName := releaseArtifactName(cfg.ToolName, runtime.GOOS, runtime.GOARCH)
+	artifactName := releaseArtifactName(latest, cfg.ToolName, runtime.GOOS, runtime.GOARCH)
 	var downloadURL string
 	for _, a := range rel.Assets {
 		if a.Name == artifactName {
@@ -129,8 +133,28 @@ func Run(ctx context.Context, cfg Config, out io.Writer) Result {
 		_ = os.Remove(tmp)
 		return Result{Status: StatusCurrent, Current: current, Latest: latest, Error: fmt.Sprintf("checksum verification failed: %v", err)}
 	}
-	if err := os.Rename(tmp, exePath); err != nil {
+
+	// The release publishes a versioned archive, not a bare binary. The
+	// checksum above authenticated those archive bytes; extract the single
+	// executable entry and install that, never the archive itself.
+	archiveBytes, rerr := os.ReadFile(tmp)
+	if rerr != nil {
 		_ = os.Remove(tmp)
+		return Result{Status: StatusCurrent, Current: current, Latest: latest, Error: "cannot read downloaded artifact"}
+	}
+	binBytes, xerr := extractBinary(archiveBytes, artifactName, cfg.ToolName)
+	if xerr != nil {
+		_ = os.Remove(tmp)
+		return Result{Status: StatusCurrent, Current: current, Latest: latest, Error: fmt.Sprintf("extracting artifact: %v", xerr)}
+	}
+	binTmp := exePath + ".update-bin"
+	defer func() { _ = os.Remove(binTmp) }()
+	if werr := os.WriteFile(binTmp, binBytes, 0o755); werr != nil {
+		_ = os.Remove(tmp)
+		return Result{Status: StatusCurrent, Current: current, Latest: latest, Error: "cannot stage extracted binary"}
+	}
+	if err := os.Rename(binTmp, exePath); err != nil {
+		_ = os.Remove(binTmp)
 		return Result{Status: StatusCurrent, Current: current, Latest: latest, Error: "failed to replace executable"}
 	}
 	return Result{Status: StatusUpdated, Current: current, Latest: latest, Path: exePath}
