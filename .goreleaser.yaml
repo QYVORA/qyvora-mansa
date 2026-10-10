@@ -34,8 +34,6 @@ builds:
     main: .
     goos:
       - linux
-      - darwin
-      - windows
     goarch:
       - amd64
       - arm64
@@ -49,6 +47,7 @@ builds:
       - -X github.com/QYVORA/qyvora-mansa/internal/version.BuildUser=goreleaser
     env:
       - CGO_ENABLED=0
+
 
 archives:
   - id: mansa
