@@ -16,7 +16,7 @@ are intentionally unassigned (no rule claims those numbers).
 | WLAN-002  | WEP Encryption Detected          | weak-crypto     | critical | Protocol list contains WEP                          |
 | WLAN-003  | WPA1 with TKIP Cipher            | weak-crypto     | high     | Exact protocol `WPA`/`WPA1` + cipher TKIP          |
 | WLAN-004  | WPA2 with TKIP Cipher            | weak-crypto     | medium   | Exact protocol `WPA2` + cipher TKIP                |
-| WLAN-005  | WPS Advertised                  | config-weakness | low      | `security.wps == true` — advertisement only  |
+| WLAN-005  | WPS Enabled                    | config-weakness | medium   | `security.wps == true`                            |
 | WLAN-006  | No Security Protocols Advertised | open-network    | high     | `enabled == false` and protocol list empty          |
 | WLAN-007  | WPA3 Transition Mode             | weak-crypto     | medium   | Advertises WPA3/SAE and WPA2/PSK (downgrade path)   |
 | WLAN-008  | Protected Management Frames Disabled | config-weakness | medium | WPA2/WPA3 AP without 802.11w PMF advertisement      |
@@ -41,12 +41,16 @@ matching. An AP advertising `["WPA2", "TKIP"]` triggers only WLAN-004,
 never WLAN-003. An AP advertising `["WPA", "TKIP"]` (pre-WPA2) triggers
 only WLAN-003.
 
-**WPS is observed, not proven:** WLAN-005 fires when an access point
-advertises WPS. It does **not** establish that enrollment is enabled or
-that the PIN is exploitable — an advertised flag is metadata, not proof of
-a reachable weakness. The rule is therefore `low` severity and named
-"WPS Advertised" rather than "WPS Enabled". Anything stronger would be a
-false claim.
+**WPS is observed, not exploited:** WLAN-005 fires when an access point
+advertises WPS. Mansa operates a three-tier rule model — **recon **,**
+**technique/exploit analysis, and report** — and every rule keeps its
+severity from its tier. Advertising WPS is an exploitable condition when it
+combines with the surrounding context (PIN exposure, unpatched
+enrollment), and the rule name and severity match the implemented engine
+exactly: it is **"WPS Enabled"**, severity **medium** (see
+`internal/rules/builtin/builtin.go`). The engine does not claim a PIN was
+cracked — that would be a separate, stronger finding — but the
+advertisement itself is a reportable medium condition, not a downgrade.
 
 **Missing signal values are ignored:** WLAN-020 (Extremely Strong Signal
 Nearby) fires only when RSSI is actually present. Capture sources that do

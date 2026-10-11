@@ -16,10 +16,11 @@ follows [Semantic Versioning](https://semver.org/) and
 - **Contact details** — the `version` command, README, and `SECURITY.md`
   surface official QYVORA contact: https://qyvora.org ·
   qyvorasec@gmail.com · Tamale, Ghana.
-- **WLAN-005 downgraded to `low` and renamed "WPS Advertised"** — an access
-  point advertising WPS is observed metadata. It does not establish that
-  enrollment is enabled or that the PIN is exploitable, so the previous
-  "WPS Enabled"/`medium` pairing claimed more than the evidence supports.
+- **WLAN-005 aligned to "WPS Enabled" / `medium`** — matches the
+  implemented detection (`security.wps == true`). The rule reports the
+  observed condition as coded; no claim is made to "cracked" status. See
+  [analysis-rules.md](docs/analysis-rules.md) for the three-tier rationale
+  (Recon/Technique/Exploitation).
 - **WLAN-020 no longer fires on a missing RSSI** — capture sources that do
   not supply a signal report `0`, which is the model's missing-value
   default rather than a real reading. Without the guard every such frame
