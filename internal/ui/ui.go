@@ -131,7 +131,7 @@ func (u *UI) Banner(tagline string) {
 	if tagline != "" {
 		fmt.Fprintln(u.w, u.White("  "+tagline))
 	}
-	fmt.Fprintln(u.w, u.Teal("  QYVORA — https://qyvora.com"))
+	fmt.Fprintln(u.w, u.Teal("  QYVORA — https://qyvora.org"))
 	fmt.Fprintln(u.w)
 }
 

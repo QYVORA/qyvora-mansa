@@ -19,7 +19,7 @@ const Framework = "mansa"
 // surfaces company data (version, report footers, banners) stays correct.
 const (
 	CompanyName  = "QYVORA OffSec"
-	CompanyURL   = "https://qyvora.netlify.app"
+	CompanyURL   = "https://qyvora.org"
 	CompanyEmail = "qyvorasec@gmail.com"
 	CompanyCity  = "Tamale, Ghana"
 )
