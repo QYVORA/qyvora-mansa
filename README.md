@@ -360,6 +360,7 @@ whatever a module declares.
 
 - [Introduction](docs/introduction.md)
 - [Architecture and wireless expansion](docs/architecture.md)
+- [Capability contract](docs/capabilities.md)
 - [Hardware capability reporting](docs/hardware.md)
 - [Bluetooth and BLE status](docs/bluetooth.md)
 - [WLAN capture and analysis](docs/wireless.md)
