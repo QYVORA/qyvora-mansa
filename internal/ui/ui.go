@@ -13,6 +13,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/QYVORA/qyvora-mansa/internal/banner"
+	"github.com/QYVORA/qyvora-tui"
 )
 
 const (
@@ -113,6 +114,9 @@ func (u *UI) Err(format string, args ...any) {
 // are off the plain art is printed even on a terminal that could show it, so
 // NO_COLOR is honoured by this surface too.
 func (u *UI) Banner(tagline string) {
+	if tui.InTUISession() {
+		return
+	}
 	fmt.Fprintln(u.w)
 	for _, line := range banner.RenderCLI() {
 		if strings.TrimSpace(line) == "" {
@@ -133,6 +137,9 @@ func (u *UI) Banner(tagline string) {
 
 // BannerFoot prints the version and help hint.
 func (u *UI) BannerFoot(ver string) {
+	if tui.InTUISession() {
+		return
+	}
 	u.Status(">", "v %s", ver)
 	fmt.Fprintln(u.w, u.DimWhite("  type 'help' for commands, 'exit' to leave."))
 	fmt.Fprintln(u.w)
