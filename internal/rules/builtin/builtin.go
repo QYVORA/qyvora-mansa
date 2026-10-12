@@ -193,10 +193,10 @@ func wpa2TkipRule() *rules.Rule {
 func wpsRule() *rules.Rule {
 	return &rules.Rule{
 		ID:          "WLAN-005",
-		Name:        "WPS Enabled",
+		Name:        "WPS Advertised",
 		Category:    "config-weakness",
-		Description: "Wi-Fi Protected Setup is enabled and may be vulnerable to brute-force PIN attacks.",
-		Severity:    models.SeverityMedium,
+		Description: "Wi-Fi Protected Setup is advertised and may be vulnerable to brute-force PIN attacks.",
+		Severity:    models.SeverityLow,
 		Confidence:  models.ConfObserved,
 		Remediation: "Disable WPS if not required. Use strong WPA3/WPA2 passphrases.",
 		Detect: func(ctx *rules.Context) []models.Finding {
@@ -207,11 +207,11 @@ func wpsRule() *rules.Rule {
 				}
 				findings = append(findings, models.Finding{
 					ID:          models.BuildFindingID("WLAN-005", "config-weakness"),
-					Title:       fmt.Sprintf("WPS enabled: %s", ap.SSID),
+					Title:       fmt.Sprintf("WPS advertised: %s", ap.SSID),
 					Category:    "config-weakness",
-					Severity:    models.SeverityMedium,
+					Severity:    models.SeverityLow,
 					Confidence:  models.ConfObserved,
-					Description: fmt.Sprintf("AP %s has WPS enabled.", ap.BSSID),
+					Description: fmt.Sprintf("AP %s advertises WPS (Wi-Fi Protected Setup).", ap.BSSID),
 					Target:      ap.BSSID,
 					Timestamp:   time.Now().UTC(),
 					Evidence: []models.Evidence{

@@ -8,6 +8,12 @@ follows [Semantic Versioning](https://semver.org/) and
 
 ### Changed
 
+- **WLAN-005 renamed "WPS Advertised" / `low`** — per recorded checklist
+  requirement R-005. An AP advertising WPS is a config-weakness condition,
+  not proof of exploitability, so the rule name and severity report the
+  advertisement rather than an exploitation claim. Detection semantics are
+  unchanged (`security.wps == true`). Supersedes the earlier "WPS Enabled /
+  medium" alignment.
 - **Unified version system** — `internal/version` now carries the canonical
   framework identity (framework, version, commit, date, build user, Go
   version/arch/os) stamped via `-ldflags`, plus official QYVORA contact
