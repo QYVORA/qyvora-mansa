@@ -75,42 +75,25 @@ func contains(haystack []string, needle string) bool {
 	return false
 }
 
-// Every published capability must be reachable by name from the TUI. A tool the
-// console cannot name is a tool the console does not offer, however it behaves
-// when typed by hand.
-func TestEveryCapabilityCommandReachesTheTUI(t *testing.T) {
+// Every published capability must be reachable by name from the command tree.
+// A tool the command tree cannot name is a tool the CLI does not offer, however
+// it behaves when typed by hand.
+func TestEveryCapabilityCommandIsRegistered(t *testing.T) {
 	root := newRootCmd()
 	names := commandNames(root)
 
 	for _, want := range []string{
 		// Top-level surfaces.
-		"tui", "discover", "scan", "enumerate", "observe", "analyze",
+		"discover", "scan", "enumerate", "observe", "analyze",
 		"assess", "findings", "evidence", "report", "target", "session", "events",
 		"capture", "credentials", "bluetooth", "capabilities", "version", "updates",
 		// The three operation classes.
 		"validate", "test", "exploit",
 	} {
 		if !contains(names, want) {
-			t.Errorf("the TUI does not offer %q", want)
+			t.Errorf("the command tree does not offer %q", want)
 		}
 	}
-}
-
-// An alias is declared on the Cobra command but is not a separate node in the
-// tree, so the TUI offers the canonical name only. This checks the half Mansa
-// controls: that the alias exists and resolves to the same command.
-func TestTUIAliasResolvesToTheSameCommand(t *testing.T) {
-	root := newRootCmd()
-	for _, sub := range root.Commands() {
-		if sub.Name() != "tui" {
-			continue
-		}
-		if !contains(sub.Aliases, "console") {
-			t.Errorf("tui does not declare the console alias, got %v", sub.Aliases)
-		}
-		return
-	}
-	t.Fatal("tui is not registered")
 }
 
 // Every operation module must appear as a completion token under its class, so

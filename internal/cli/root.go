@@ -144,22 +144,11 @@ to evaluate.`,
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			// Machine-oriented global flags keep the classic behaviour: a
-			// redirected stdout, a machine report, or a quiet run must not be
-			// handed a full-screen interface.
-			//
-			// An event destination is deliberately not listed here. It used to
-			// be, which meant `mansa --events out.jsonl` printed the help text
-			// and said nothing about why. runTUI refuses that combination with
-			// an explanation, and refusing a TTY run is safe there because the
-			// interactive check below still sends redirected output to help.
-			if formatFlag == "json" || quietFlag {
-				return cmd.Help()
-			}
-			if flagNoTui {
-				return cmd.Root().Help()
-			}
-			return runTUI(cmd.Root(), cmd.Context())
+			// The bare invocation is one-shot CLI only: print usage rather
+			// than drop into an interactive interface. The per-tool TUI is
+			// disabled pending the redirect of qyvora-tui to the future AI
+			// orchestration layer.
+			return cmd.Root().Help()
 		},
 	}
 	pf := root.PersistentFlags()
@@ -177,7 +166,6 @@ to evaluate.`,
 	})
 	root.SetVersionTemplate(fmt.Sprintf("mansa %s\n", version.Version))
 
-	root.AddCommand(commandTUI())
 	root.AddCommand(newVersionCmd())
 	root.AddCommand(newCapabilitiesCmd())
 	root.AddCommand(newCompletionCmd())
