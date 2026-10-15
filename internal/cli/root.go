@@ -113,8 +113,8 @@ func newRootCmd() *cobra.Command {
 		Short: "Authorized wireless security assessment framework",
 		Long: `mansa is a terminal-first wireless security assessment framework.
 
-Run it with no arguments to enter the interactive console, or use the
-same commands one-shot: mansa scan --sim, mansa analyze --session ... .
+Run it with no arguments to print this help; every command is one-shot:
+mansa scan --sim, mansa analyze --session ... .
  
 It performs authorized wireless discovery, access-point enumeration,
 client observation, WLAN security analysis, channel/RF analysis, and
