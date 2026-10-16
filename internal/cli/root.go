@@ -105,7 +105,6 @@ var (
 	quietFlag   bool
 	verboseFlag bool
 	dryRunFlag  bool
-	flagNoTui   bool
 )
 
 func newRootCmd() *cobra.Command {
@@ -166,7 +165,6 @@ to evaluate.`,
 	pf.BoolVar(&quietFlag, "quiet", false, "suppress non-error output")
 	pf.BoolVarP(&verboseFlag, "verbose", "v", false, "verbose output")
 	pf.StringVar(&eventsFlag, "events", "", "emit JSONL event stream to stdout, stderr, or a file path")
-	pf.BoolVar(&flagNoTui, "no-tui", false, "Disable TUI and print banner/help")
 	pf.BoolVar(&dryRunFlag, "dry-run", false, "show the assessment plan without executing")
 	pf.BoolP("authorized", "y", false, "confirm authorization scope non-interactively")
 
