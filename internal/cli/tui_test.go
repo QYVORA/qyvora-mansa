@@ -75,6 +75,33 @@ func contains(haystack []string, needle string) bool {
 	return false
 }
 
+// findPath resolves a command by its space-separated path in the tree, which is
+// exactly how an operator names it under the recon/exploit/report grammar.
+func findPath(root *cobra.Command, path ...string) *cobra.Command {
+	cur := root
+	for _, name := range path {
+		var next *cobra.Command
+		for _, sub := range cur.Commands() {
+			if sub.Name() == name {
+				next = sub
+				break
+			}
+		}
+		if next == nil {
+			return nil
+		}
+		cur = next
+	}
+	return cur
+}
+
+// operationPaths is where each class verb lives under the tier grammar.
+var operationPaths = map[string][]string{
+	"validate": {"recon", "validate"},
+	"test":     {"exploit", "test"},
+	"exploit":  {"exploit", "exploit"},
+}
+
 // Every published capability must be reachable by name from the command tree.
 // A tool the command tree cannot name is a tool the CLI does not offer, however
 // it behaves when typed by hand.
@@ -104,13 +131,7 @@ func TestEveryOperationModuleIsCompletable(t *testing.T) {
 	root := newRootCmd()
 
 	for _, verb := range []string{"validate", "test", "exploit"} {
-		var parent *cobra.Command
-		for _, sub := range root.Commands() {
-			if sub.Name() == verb {
-				parent = sub
-				break
-			}
-		}
+		parent := findPath(root, operationPaths[verb]...)
 		if parent == nil {
 			t.Fatalf("%s is not registered", verb)
 		}
@@ -139,13 +160,7 @@ func TestEveryOperationModuleIsCompletable(t *testing.T) {
 func TestModuleRunsByNameAndByArgument(t *testing.T) {
 	root := newRootCmd()
 	for _, verb := range []string{"validate", "test", "exploit"} {
-		var parent *cobra.Command
-		for _, sub := range root.Commands() {
-			if sub.Name() == verb {
-				parent = sub
-				break
-			}
-		}
+		parent := findPath(root, operationPaths[verb]...)
 		if parent == nil {
 			t.Fatalf("%s is not registered", verb)
 		}
