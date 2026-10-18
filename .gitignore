@@ -39,3 +39,6 @@ go.work
 # Environment files
 .env
 .env.local
+
+# Script engine output
+mansa-report.json

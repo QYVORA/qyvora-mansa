@@ -3,6 +3,7 @@ module github.com/QYVORA/qyvora-mansa
 go 1.26.5
 
 require (
+	github.com/QYVORA/qyvora-script v0.1.0
 	github.com/QYVORA/qyvora-tui v0.11.0
 	github.com/muesli/termenv v0.16.0
 	github.com/spf13/cobra v1.10.2
@@ -49,3 +50,5 @@ require (
 	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/QYVORA/qyvora-script => ../../shared/qyvora-script

@@ -100,11 +100,12 @@ func initApp() {
 }
 
 var (
-	formatFlag  string
-	eventsFlag  string
-	quietFlag   bool
-	verboseFlag bool
-	dryRunFlag  bool
+	formatFlag    string
+	eventsFlag    string
+	quietFlag     bool
+	verboseFlag   bool
+	dryRunFlag    bool
+	allowShellOut bool
 )
 
 func newRootCmd() *cobra.Command {
@@ -166,6 +167,7 @@ to evaluate.`,
 	pf.BoolVarP(&verboseFlag, "verbose", "v", false, "verbose output")
 	pf.StringVar(&eventsFlag, "events", "", "emit JSONL event stream to stdout, stderr, or a file path")
 	pf.BoolVar(&dryRunFlag, "dry-run", false, "show the assessment plan without executing")
+	pf.BoolVar(&allowShellOut, "allow-shellout", false, "allow scripts to use exec/run.cmd shell-out (also via QYVORA_ALLOW_SHELLOUT=1)")
 	pf.BoolP("authorized", "y", false, "confirm authorization scope non-interactively")
 
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
@@ -174,7 +176,7 @@ to evaluate.`,
 	root.SetVersionTemplate(fmt.Sprintf("mansa %s\n", version.Version))
 
 	// Flat utility commands, identical in shape across all 14 tools.
-	root.AddCommand(newVersionCmd(), newCapabilitiesCmd(), newCompletionCmd(), newUpdatesCmd())
+	root.AddCommand(newVersionCmd(), newCapabilitiesCmd(), newCompletionCmd(), newUpdatesCmd(), newScriptCmd())
 
 	// Tier grammar: <tool> <tier> <module> [<action>] [target] [flags]. mansa's
 	// collection and validation work is recon-tier; its active-testing and
