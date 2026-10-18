@@ -157,7 +157,7 @@ func (b *LinuxBackend) ScanBLE(ctx context.Context, adapter string, visit func(m
 	if err != nil {
 		return stats, fmt.Errorf("open HCI socket (CAP_NET_RAW may be required): %w", err)
 	}
-	defer unix.Close(fd)
+	defer func() { _ = unix.Close(fd) }()
 	if err := unix.Bind(fd, &unix.SockaddrHCI{Dev: uint16(index), Channel: unix.HCI_CHANNEL_RAW}); err != nil {
 		return stats, fmt.Errorf("bind HCI adapter %s: %w", adapter, err)
 	}

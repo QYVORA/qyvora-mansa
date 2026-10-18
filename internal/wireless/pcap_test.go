@@ -128,7 +128,7 @@ func TestReadPCAPInventoryBuildsClientTopology(t *testing.T) {
 	copy(bssid[:], []byte{0x02, 0, 0, 0, 0, 1})
 	copy(station[:], []byte{0x02, 0, 0, 0, 0, 2})
 	beacon := makeBeaconFrame(bssid, []byte("lab"), 1, false)
-	probe := make([]byte, 24)
+	probe := make([]byte, 24, 32)
 	binary.LittleEndian.PutUint16(probe, uint16(4<<4))
 	copy(probe[10:16], station[:])
 	probe = append(probe, 0, 6, 'o', 'f', 'f', 'i', 'c', 'e')
@@ -201,7 +201,7 @@ func BenchmarkReadPCAPAccessPoints(b *testing.B) {
 }
 
 func makeBeaconFrame(bssid [6]byte, ssid []byte, channel byte, privacy bool) []byte {
-	packet := make([]byte, 36)
+	packet := make([]byte, 36, 38+len(ssid)+3+7)
 	binary.LittleEndian.PutUint16(packet, uint16(8<<4))
 	copy(packet[10:16], bssid[:])
 	copy(packet[16:22], bssid[:])

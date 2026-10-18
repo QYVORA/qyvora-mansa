@@ -265,7 +265,7 @@ func readCredentialCapture(path string) ([]models.WirelessAuthenticationObservat
 	if err != nil {
 		return nil, nil, usagef("--capture %s could not be opened: %v", path, err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	inventory, err := wireless.ReadPCAPInventoryContext(context.Background(), file)
 	if err != nil {
 		return nil, nil, fmt.Errorf("read capture %s: %w", path, err)

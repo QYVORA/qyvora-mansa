@@ -113,7 +113,7 @@ func newCaptureLiveCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("create capture output: %w", err)
 			}
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 			writer, err := wireless.NewPCAPWriter(file, linkType)
 			if err != nil {
 				return fmt.Errorf("write capture header: %w", err)
@@ -328,7 +328,7 @@ func newCaptureAnalyzeCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("open capture: %w", err)
 			}
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 
 			base := filepath.Base(path)
 			if appState.Events != nil {

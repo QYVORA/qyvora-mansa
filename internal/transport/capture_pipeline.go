@@ -51,15 +51,16 @@ func CaptureQueuedWithPrefilter(ctx context.Context, provider CaptureProvider, i
 	var buffers sync.Pool
 	acquire := func(size int) []byte {
 		if value := buffers.Get(); value != nil {
-			if data, ok := value.([]byte); ok && cap(data) >= size {
-				return data[:size]
+			if data, ok := value.(*[]byte); ok && cap(*data) >= size {
+				return (*data)[:size]
 			}
 		}
 		return make([]byte, size)
 	}
 	release := func(data []byte) {
 		if cap(data) <= maxReusablePacketBuffer {
-			buffers.Put(data[:0])
+			data = data[:0]
+			buffers.Put(&data)
 		}
 	}
 

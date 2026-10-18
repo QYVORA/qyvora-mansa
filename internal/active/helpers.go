@@ -1,7 +1,6 @@
 package active
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"time"
@@ -216,7 +215,7 @@ func equalMAC(a, b string) bool {
 // Confidence is bounded by the quality of the evidence: a run reports ConfObserved
 // when the kernel accepted the frames, because an accepted write is not proof of
 // a frame on the air.
-func observationFinding(ruleID, title, category string, severity models.Severity, confidence models.Confidence, description, target, limitation string, evidence []models.Evidence) models.Finding {
+func observationFinding(ruleID, title, category string, severity models.Severity, confidence models.Confidence, description, target, _ string, evidence []models.Evidence) models.Finding {
 	references := []string{"IEEE Std 802.11-2020"}
 	return models.Finding{
 		ID:          models.NewID("finding"),
@@ -265,18 +264,6 @@ func min(a, b int) int {
 		return a
 	}
 	return b
-}
-
-// interfaceName is the interface the run transmits and listens on.
-func interfaceName(ex *operation.Execution) string { return ex.Request.Interface }
-
-// contextWithDeadline bounds a module's own work below the executor's deadline,
-// so a module cannot outlive the run the executor timed out.
-func contextWithDeadline(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
-	if timeout <= 0 {
-		return ctx, func() {}
-	}
-	return context.WithTimeout(ctx, timeout)
 }
 
 // captureStatsRef documents why a module reads through the listener rather than

@@ -398,7 +398,7 @@ func pbkdf2Key(password, salt []byte, iterations, keyLength int, h func() hash.H
 	return out[:keyLength], nil
 }
 
-func pairwiseKeyExpansion(kdf KDF) []byte {
+func pairwiseKeyExpansion(_ KDF) []byte {
 	return []byte(pairwiseKeyExpansionSHA1)
 }
 

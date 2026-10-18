@@ -66,7 +66,7 @@ type Schema struct {
 
 // Registry returns all Mansa capabilities as a Tool list.
 func Registry() []Tool {
-	tools := []Tool{
+	tools := append([]Tool{
 		{
 			ID:          "mansa.discover",
 			Name:        "Discover Interfaces",
@@ -284,8 +284,7 @@ func Registry() []Tool {
 			},
 			HardwareCapability: models.HardwareWiFiInterfaceDiscovery,
 		},
-	}
-	tools = append(tools, operationTools()...)
+	}, operationTools()...)
 	sort.Slice(tools, func(i, j int) bool { return tools[i].ID < tools[j].ID })
 	return tools
 }

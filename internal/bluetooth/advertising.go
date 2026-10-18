@@ -163,11 +163,12 @@ func formatUUID128(little []byte) string {
 // the data, which is what the specification requires and what the decoder above
 // expects.
 func SimulatedAdvertisementData() []byte {
-	payload := []byte{
+	payload := make([]byte, 0, 26)
+	payload = append(payload,
 		0x02, adTypeFlags, 0x06, // LE General Discoverable
 		0x03, adTypeCompleteUUID16, 0x0f, 0x18, // service UUID 0x180f, little endian on air
-		byte(1 + len("Mansa Sim")), adTypeCompleteLocalName,
-	}
+		byte(1+len("Mansa Sim")), adTypeCompleteLocalName,
+	)
 	payload = append(payload, []byte("Mansa Sim")...)
 	payload = append(payload, 0x02, adTypeTXPowerLevel, 0xe4)                 // -28 dBm
 	payload = append(payload, 0x04, adTypeManufacturerData, 0x4c, 0x00, 0x4d) // company 0x004c
@@ -392,7 +393,8 @@ func SimulatedLEAdvertisingReport() []byte {
 	parameters = append(parameters, payload...)
 	parameters = append(parameters, 0xc4) // RSSI -60 dBm
 
-	packet := []byte{hciEventLEMeta, hciSubeventLEAdvReport}
+	packet := make([]byte, 0, 2+len(parameters))
+	packet = append(packet, hciEventLEMeta, hciSubeventLEAdvReport)
 	packet = append(packet, parameters...)
 	return packet
 }

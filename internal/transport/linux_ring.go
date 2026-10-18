@@ -29,7 +29,7 @@ func captureTPacketV3(ctx context.Context, ifaceIndex int, linkType uint32, filt
 	if err != nil {
 		return CaptureStats{}, false, fmt.Errorf("open packet ring socket: %w", err)
 	}
-	defer unix.Close(fd)
+	defer func() { _ = unix.Close(fd) }()
 	if err = unix.SetsockoptInt(fd, unix.SOL_PACKET, packetVersionOption, unix.TPACKET_V3); err != nil {
 		return CaptureStats{}, false, nil
 	}
@@ -55,7 +55,7 @@ func captureTPacketV3(ctx context.Context, ifaceIndex int, linkType uint32, filt
 	if err != nil {
 		return CaptureStats{}, true, fmt.Errorf("map packet ring: %w", err)
 	}
-	defer unix.Munmap(area)
+	defer func() { _ = unix.Munmap(area) }()
 	stats := CaptureStats{LinkType: linkType}
 	for blockIndex := 0; ; blockIndex = (blockIndex + 1) % ringBlockCount {
 		if err := ctx.Err(); err != nil {

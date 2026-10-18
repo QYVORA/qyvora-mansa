@@ -86,7 +86,7 @@ func (b *SimBackend) Capture(ctx context.Context, iface string, visit func(time.
 }
 
 func simulatedBeaconFrame() []byte {
-	frame := make([]byte, 24+12)
+	frame := make([]byte, 24+12, 24+12+14)
 	binary.LittleEndian.PutUint16(frame[:2], 8<<4)
 	for i := 4; i < 10; i++ {
 		frame[i] = 0xff
@@ -99,7 +99,7 @@ func simulatedBeaconFrame() []byte {
 }
 
 func simulatedProbeFrame() []byte {
-	frame := make([]byte, 24)
+	frame := make([]byte, 24, 35)
 	binary.LittleEndian.PutUint16(frame[:2], 4<<4)
 	for i := 4; i < 10; i++ {
 		frame[i] = 0xff

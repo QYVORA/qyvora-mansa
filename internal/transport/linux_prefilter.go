@@ -95,7 +95,7 @@ func probePrefilterSupport(iface string, linkType uint32) (bool, string) {
 	if err != nil {
 		return false, fmt.Sprintf("open packet socket (CAP_NET_RAW required): %v", err)
 	}
-	defer unix.Close(fd)
+	defer func() { _ = unix.Close(fd) }()
 	if err := unix.Bind(fd, &unix.SockaddrLinklayer{Protocol: htons(etherProtocolAll), Ifindex: device.Index}); err != nil {
 		return false, fmt.Sprintf("bind packet socket to %q: %v", iface, err)
 	}
@@ -151,11 +151,11 @@ func (p *LinuxPrefilter) Detach(fd int) error {
 // filter only as the compiled program, and x/sys/unix offers no reader for it, so
 // there is nothing here that could recover either the original request or
 // whether a filter is present. It reports absent rather than guessing.
-func (p *LinuxPrefilter) Inspect(fd int) (PrefilterSpec, bool, error) {
+func (p *LinuxPrefilter) Inspect(_ int) (PrefilterSpec, bool, error) {
 	return PrefilterSpec{}, false, nil
 }
 
 // Probe reports whether this build can attach a prefilter at all.
-func (p *LinuxPrefilter) Probe(fd int) bool {
+func (p *LinuxPrefilter) Probe(_ int) bool {
 	return runtime.GOOS == "linux"
 }

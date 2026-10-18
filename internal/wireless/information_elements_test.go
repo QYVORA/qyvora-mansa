@@ -35,7 +35,7 @@ func TestParseInformationElements(t *testing.T) {
 }
 
 func TestParseBeaconProbeResponse(t *testing.T) {
-	packet := make([]byte, 24+12)
+	packet := make([]byte, 24+12, 24+12+8)
 	binary.LittleEndian.PutUint16(packet, uint16(8<<4))
 	packet = append(packet, 0, 3, 'a', 'p', '1', 3, 1, 6)
 	got, err := ParseBeaconProbeResponse(packet)
@@ -105,7 +105,7 @@ func TestParseWPSElement(t *testing.T) {
 func FuzzParseInformationElements(f *testing.F) {
 	f.Add([]byte{0, 3, 'a', 'p', '1'})
 	f.Add([]byte{48, 2, 1, 0})
-	f.Fuzz(func(t *testing.T, data []byte) {
+	f.Fuzz(func(_ *testing.T, data []byte) {
 		_, _ = ParseInformationElements(data)
 	})
 }

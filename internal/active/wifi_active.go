@@ -29,10 +29,9 @@ func WiFiModules() []operation.Module {
 // The transmitter address is a declared parameter rather than a value read from
 // the adapter, because the frame bytes are recorded: a frame built from whatever
 // address the host happened to have would make the recorded bytes unreproducible.
-func transmitCommon(id, title, description, source string, required []operation.Parameter, optional []operation.Parameter, maxFrames int, maxDuration time.Duration, prerequisites []string, noiseLevel models.NoiseLevel) operation.Meta {
-	parameters := []operation.Parameter{
-		{Name: "source", Kind: "mac", Required: true, Description: "transmitter MAC address placed in the constructed frames"},
-	}
+func transmitCommon(id, title, description, _ string, required []operation.Parameter, optional []operation.Parameter, maxFrames int, maxDuration time.Duration, prerequisites []string, noiseLevel models.NoiseLevel) operation.Meta {
+	parameters := make([]operation.Parameter, 0, 1+len(required)+len(optional))
+	parameters = append(parameters, operation.Parameter{Name: "source", Kind: "mac", Required: true, Description: "transmitter MAC address placed in the constructed frames"})
 	parameters = append(parameters, required...)
 	parameters = append(parameters, optional...)
 	return operation.Meta{

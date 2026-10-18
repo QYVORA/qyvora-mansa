@@ -60,10 +60,6 @@ func (b *stubBackend) Transmit(_ context.Context, _ string, frames [][]byte) (tr
 	return stats, nil
 }
 
-// transmitModule declares everything the gates check, so each test spoils
-// exactly one gate.
-func transmitModule() Module { return &stubGateModule{meta: gateMeta()} }
-
 func gateMeta() Meta {
 	return Meta{
 		ID:                  "wifi.test.gate",

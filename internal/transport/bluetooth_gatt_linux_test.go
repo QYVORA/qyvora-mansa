@@ -202,8 +202,8 @@ func newScriptedPeer(t *testing.T, mtu uint16) (*attLink, *scriptedPeer) {
 		t.Skipf("cannot create a socket pair: %v", err)
 	}
 	t.Cleanup(func() {
-		unix.Close(client)
-		unix.Close(server)
+		_ = unix.Close(client)
+		_ = unix.Close(server)
 	})
 	if err := unix.SetNonblock(server, true); err != nil {
 		t.Fatal(err)
@@ -258,8 +258,8 @@ func socketPair() (int, int, error) {
 		return 0, 0, err
 	}
 	if err := unix.SetNonblock(fds[0], true); err != nil {
-		unix.Close(fds[0])
-		unix.Close(fds[1])
+		_ = unix.Close(fds[0])
+		_ = unix.Close(fds[1])
 		return 0, 0, err
 	}
 	return fds[0], fds[1], nil
@@ -293,13 +293,13 @@ func TestWalkGATTReportsADisconnectedPeer(t *testing.T) {
 	if err != nil {
 		t.Skipf("cannot create a socket pair: %v", err)
 	}
-	defer unix.Close(client)
-	defer unix.Close(server)
+	defer func() { _ = unix.Close(client) }()
+	defer func() { _ = unix.Close(server) }()
 	link := &attLink{fd: client, handle: 0x000c, mtu: bluetooth.DefaultATTMTU}
 	// A disconnection complete event for this handle.
 	event := []byte{0x05, 0x04, 0x05, 0x0c, 0x00, 0x16}
 	go func() {
-		unix.Write(server, event)
+		_, _ = unix.Write(server, event)
 	}()
 	if _, err := link.request(ctx, servicePageRequestForTest()); err == nil {
 		t.Error("a peer that disconnects mid-request must be reported")
@@ -313,8 +313,8 @@ func TestWalkGATTTimesOutWhenThePeerIsSilent(t *testing.T) {
 	if err != nil {
 		t.Skipf("cannot create a socket pair: %v", err)
 	}
-	defer unix.Close(client)
-	defer unix.Close(server)
+	defer func() { _ = unix.Close(client) }()
+	defer func() { _ = unix.Close(server) }()
 	link := &attLink{fd: client, handle: 0x000c, mtu: bluetooth.DefaultATTMTU}
 	start := time.Now()
 	if _, err := link.request(ctx, servicePageRequestForTest()); err == nil {
@@ -330,8 +330,8 @@ func TestWalkGATTHonoursContextCancellation(t *testing.T) {
 	if err != nil {
 		t.Skipf("cannot create a socket pair: %v", err)
 	}
-	defer unix.Close(client)
-	defer unix.Close(server)
+	defer func() { _ = unix.Close(client) }()
+	defer func() { _ = unix.Close(server) }()
 	link := &attLink{fd: client, handle: 0x000c, mtu: bluetooth.DefaultATTMTU}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -352,42 +352,13 @@ func TestWalkGATTRefusesAnUnsolicitedWriteRequest(t *testing.T) {
 	if err != nil {
 		t.Skipf("cannot create a socket pair: %v", err)
 	}
-	defer unix.Close(client)
-	defer unix.Close(server)
+	defer func() { _ = unix.Close(client) }()
+	defer func() { _ = unix.Close(server) }()
 	link := &attLink{fd: client, handle: 0x000c, mtu: bluetooth.DefaultATTMTU}
 	// 0x52 is Write Command, which a discovery walk must never send.
 	if _, err := link.request(ctx, []byte{0x52, 0x01, 0x00}); err == nil {
 		t.Error("an opcode with no response must be refused")
 	}
-}
-
-// servicePageForTest builds a read-by-group-type response listing one service.
-func servicePageForTest(start, end, uuid uint16) []byte {
-	pdu := []byte{bluetooth.ATTReadByGroupTypeResponse, 0x06}
-	pdu = binary.LittleEndian.AppendUint16(pdu, start)
-	pdu = binary.LittleEndian.AppendUint16(pdu, end)
-	return append(pdu, byte(uuid), byte(uuid>>8))
-}
-
-// characteristicPageForTest builds a read-by-type response listing one
-// characteristic.
-func characteristicPageForTest(declaration uint16, properties uint8, value uint16, uuid uint16) []byte {
-	pdu := []byte{bluetooth.ATTReadByTypeResponse, 0x07}
-	pdu = binary.LittleEndian.AppendUint16(pdu, declaration)
-	pdu = append(pdu, properties)
-	pdu = binary.LittleEndian.AppendUint16(pdu, value)
-	return append(pdu, byte(uuid), byte(uuid>>8))
-}
-
-// findPageForTest builds a find-information response listing the given handles as
-// client characteristic configuration descriptors.
-func findPageForTest(handles ...uint16) []byte {
-	pdu := []byte{bluetooth.ATTFindInformationResponse, 0x01}
-	for _, handle := range handles {
-		pdu = binary.LittleEndian.AppendUint16(pdu, handle)
-		pdu = append(pdu, 0x02, 0x29)
-	}
-	return pdu
 }
 
 // servicePageRequestForTest builds the request a walk sends to list services.

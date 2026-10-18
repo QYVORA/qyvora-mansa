@@ -65,7 +65,7 @@ func FuzzParseFrame(f *testing.F) {
 	beacon := make([]byte, 24)
 	binary.LittleEndian.PutUint16(beacon, uint16(8<<4))
 	f.Add(beacon)
-	f.Fuzz(func(t *testing.T, packet []byte) {
+	f.Fuzz(func(_ *testing.T, packet []byte) {
 		_, _ = ParseFrame(packet)
 	})
 }

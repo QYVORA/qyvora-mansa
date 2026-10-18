@@ -94,7 +94,7 @@ func (b *LinuxBackend) Transmit(ctx context.Context, iface string, frames [][]by
 	if err != nil {
 		return stats, fmt.Errorf("open a raw packet socket (CAP_NET_RAW may be required): %w", err)
 	}
-	defer unix.Close(fd)
+	defer func() { _ = unix.Close(fd) }()
 
 	// Binding the socket to the interface is what scopes the write to it, so a
 	// frame cannot go out on a different adapter than the one authorized.

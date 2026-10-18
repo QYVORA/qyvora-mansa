@@ -98,7 +98,7 @@ func (r Request) DurationParam(module Meta, name string, ceiling time.Duration) 
 // BoolParam reports whether a boolean parameter is set. A valueless flag-style
 // parameter (`--param lab`) arrives as an empty string, which means true: the
 // operator named it, and its presence is the whole point.
-func (r Request) BoolParam(module Meta, name string) bool {
+func (r Request) BoolParam(_ Meta, name string) bool {
 	value, ok := r.Params[name]
 	if !ok {
 		return false

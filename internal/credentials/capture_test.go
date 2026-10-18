@@ -144,7 +144,7 @@ func TestVerifierWorksOnCaptureReadFromPCAP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	inventory, err := wireless.ReadPCAPInventory(file)
 	if err != nil {
 		t.Fatal(err)
@@ -182,7 +182,7 @@ func TestVerifierWorksOnSHA256Capture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	inventory, err := wireless.ReadPCAPInventory(file)
 	if err != nil {
 		t.Fatal(err)
@@ -220,7 +220,7 @@ func TestVerifierReportsCaptureWithoutHandshake(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	inventory, err := wireless.ReadPCAPInventory(file)
 	if err != nil {
 		t.Fatal(err)

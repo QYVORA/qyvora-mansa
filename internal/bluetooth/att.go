@@ -48,10 +48,6 @@ const (
 // a larger buffer than this without a completed exchange.
 const DefaultATTMTU = 23
 
-// maxATTResponseLength bounds a single decoded response so a peer cannot force
-// an unbounded allocation.
-const maxATTResponseLength = 512
-
 // AttError is a decoded ATT error response.
 type AttError struct {
 	RequestOpcode uint8
@@ -186,7 +182,6 @@ func ParseAttributeUUID(field []byte) (string, error) {
 		return FormatUUID(binary.LittleEndian.Uint16(field)), nil
 	case 16:
 		var text strings.Builder
-		const groups = 8
 		// A 128-bit UUID is transmitted least-significant group first, so each
 		// displayed group reverses the two bytes it was sent in.
 		for i := 0; i < len(field); i += 2 {

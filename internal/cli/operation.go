@@ -124,16 +124,16 @@ func operationModuleLong(meta operation.Meta) string {
 		b.WriteString("\nThis run is not reversible: anything it transmits has already left the host.\n")
 	}
 	if meta.VulnerabilityClass != "" {
-		b.WriteString(fmt.Sprintf("\nVulnerability class: %s. Affected component: %s.\n", meta.VulnerabilityClass, meta.Component))
+		fmt.Fprintf(&b, "\nVulnerability class: %s. Affected component: %s.\n", meta.VulnerabilityClass, meta.Component)
 	}
 	if len(meta.RequiredHardware) > 0 {
 		b.WriteString("\nRequires hardware: " + strings.Join(meta.RequiredHardware, ", ") + ".\n")
 	}
 	if meta.MaxFrames > 0 {
-		b.WriteString(fmt.Sprintf("\nFrame ceiling: %d.\n", meta.MaxFrames))
+		fmt.Fprintf(&b, "\nFrame ceiling: %d.\n", meta.MaxFrames)
 	}
 	if meta.MaxDuration > 0 {
-		b.WriteString(fmt.Sprintf("\nTime ceiling: %s.\n", meta.MaxDuration))
+		fmt.Fprintf(&b, "\nTime ceiling: %s.\n", meta.MaxDuration)
 	}
 	if len(meta.Limitations) > 0 {
 		b.WriteString("\nLimitations:\n")

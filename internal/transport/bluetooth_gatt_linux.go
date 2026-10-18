@@ -116,7 +116,7 @@ func (b *LinuxBackend) EnumerateGATT(ctx context.Context, adapterName, address s
 	if err != nil {
 		return stats, fmt.Errorf("open HCI socket (CAP_NET_RAW may be required): %w", err)
 	}
-	defer unix.Close(fd)
+	defer func() { _ = unix.Close(fd) }()
 	if err = unix.Bind(fd, &unix.SockaddrHCI{Dev: uint16(index), Channel: unix.HCI_CHANNEL_RAW}); err != nil {
 		return stats, fmt.Errorf("bind HCI adapter %s: %w", adapterName, err)
 	}
@@ -496,30 +496,6 @@ func writeACL(fd int, handle uint16, payload []byte) error {
 		return fmt.Errorf("send ACL data: %w", err)
 	}
 	return nil
-}
-
-// parseACL extracts the L2CAP payload for one channel of one handle, or reports
-// nil when the packet belongs to another channel or another link.
-func parseACL(event []byte, handle uint16, cid uint16) ([]byte, error) {
-	if len(event) < 1+aclHeaderBytes {
-		return nil, errors.New("ACL data event is shorter than its header")
-	}
-	if binary.LittleEndian.Uint16(event[1:3]) != handle {
-		return nil, nil
-	}
-	payload := event[1+aclHeaderBytes:]
-	if len(payload) < l2capLengthBytes+l2capCIDBytes {
-		return nil, errors.New("ACL payload is shorter than an L2CAP header")
-	}
-	length := int(binary.LittleEndian.Uint16(payload[0:2]))
-	channel := binary.LittleEndian.Uint16(payload[2:4])
-	if channel != cid {
-		return nil, nil
-	}
-	if length < l2capCIDBytes || 4+length > len(payload) {
-		return nil, fmt.Errorf("L2CAP length %d does not match the %d-byte packet", length, len(payload))
-	}
-	return payload[4 : 4+length], nil
 }
 
 // readHCIEvent waits for one HCI packet, polling the non-blocking socket.

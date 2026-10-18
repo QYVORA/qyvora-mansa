@@ -92,7 +92,7 @@ func TestCaptureLiveStreamsTopologyEventsBeforeAnalysis(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	var seen []wireEvent
 	var liveAP, liveClient int
 	scanner := bufio.NewScanner(file)
@@ -131,7 +131,7 @@ func TestCaptureLiveStreamsTopologyEventsBeforeAnalysis(t *testing.T) {
 }
 
 func testBeaconPCAP() []byte {
-	frame := make([]byte, 36)
+	frame := make([]byte, 36, 47)
 	binary.LittleEndian.PutUint16(frame, uint16(8<<4))
 	copy(frame[10:16], []byte{0x02, 0, 0, 0, 0, 1})
 	copy(frame[16:22], []byte{0x02, 0, 0, 0, 0, 1})

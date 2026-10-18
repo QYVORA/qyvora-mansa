@@ -111,7 +111,7 @@ func newBluetoothCmd() *cobra.Command {
 		Use:   "adapters",
 		Short: "List local Linux Bluetooth HCI adapters",
 		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			provider, ok := appState.Backend.(transport.BluetoothAdapterProvider)
 			if !ok {
 				return fmt.Errorf("selected backend does not support Bluetooth adapter discovery")
@@ -221,7 +221,7 @@ func newBluetoothCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("open GATT database: %w", err)
 				}
-				defer file.Close()
+				defer func() { _ = file.Close() }()
 				data, err := io.ReadAll(io.LimitReader(file, (1<<20)+1))
 				if err != nil {
 					return fmt.Errorf("read GATT database: %w", err)

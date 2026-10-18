@@ -87,7 +87,8 @@ func TestParseLEAdvertisingReportsRefusesANonReportPacket(t *testing.T) {
 
 func TestParseLEAdvertisingReportsRefusesATruncatedReport(t *testing.T) {
 	// A valid header whose report claims more data than the packet holds.
-	packet := []byte{hciEventLEMeta, hciSubeventLEAdvReport, 0x01, 0x03, 0x00}
+	packet := make([]byte, 0, 13)
+	packet = append(packet, hciEventLEMeta, hciSubeventLEAdvReport, 0x01, 0x03, 0x00)
 	packet = append(packet, 0x6b, 0x8c, 0x4f, 0x2a, 0x11, 0x05)
 	packet = append(packet, 0x20, 0x41) // claims 32 data bytes, supplies one
 	if _, err := ParseLEAdvertisingReports(packet); err == nil {

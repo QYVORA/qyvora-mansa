@@ -130,8 +130,9 @@ func credEAPOLDataFrame(body []byte) []byte {
 func TestCredentialsVerifyReportsMatchingCandidate(t *testing.T) {
 	resetTestApp(t)
 	capture := writeHandshakePCAP(t, credPass, wpa.KDFSHA1, wpa.MICLengthSHA1, true)
-	args := []string{"credentials", "verify", "--capture", capture, "--ssid", credSSID, "--authorized",
-		"--builtin=false", "--candidate", credPass}
+	args := make([]string, 0, 12)
+	args = append(args, "credentials", "verify", "--capture", capture, "--ssid", credSSID, "--authorized",
+		"--builtin=false", "--candidate", credPass)
 	if got := ExecuteArgs(t.Context(), append(args, "-o", "json")); got != exitcode.Success {
 		t.Fatalf("exit code = %d, want success", got)
 	}

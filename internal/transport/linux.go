@@ -78,7 +78,7 @@ func (b *LinuxBackend) CaptureWithPrefilter(ctx context.Context, iface string, s
 	if err != nil {
 		return CaptureStats{}, fmt.Errorf("open packet socket (CAP_NET_RAW required): %w", err)
 	}
-	defer syscall.Close(fd)
+	defer func() { _ = syscall.Close(fd) }()
 	if err := attachPrefilter(fd, filter); err != nil {
 		return CaptureStats{}, err
 	}

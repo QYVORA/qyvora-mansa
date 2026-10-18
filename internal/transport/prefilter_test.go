@@ -151,7 +151,7 @@ func dataFrame(t *testing.T, control byte, llc []byte) []byte {
 	if control&frameControlSubtype >= subtypeBeacon {
 		length += qosControlLength
 	}
-	frame := make([]byte, length)
+	frame := make([]byte, length, length+len(llc))
 	frame[0] = control
 	copy(frame[4:10], mustMACBytes(t, "aa:bb:cc:dd:ee:01"))
 	copy(frame[10:16], mustMACBytes(t, "aa:bb:cc:dd:ee:02"))
@@ -165,7 +165,7 @@ func snap(etherType uint16) []byte {
 // wrapRadiotap prefixes a frame with a version 0 radiotap header of the given
 // length, which must be a multiple of four as the specification requires.
 func wrapRadiotap(frame []byte, length int) []byte {
-	header := make([]byte, length)
+	header := make([]byte, length, length+len(frame))
 	header[0] = 0
 	header[1] = 0
 	header[2] = byte(length)

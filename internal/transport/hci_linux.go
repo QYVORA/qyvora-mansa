@@ -28,8 +28,6 @@ const (
 	hciEventCommandStatus = 0x0f
 	// hciEventLEMeta is the LE Meta event, which carries LE connection results.
 	hciEventLEMeta = 0x3e
-	// hciSubeventLEConnectionComplete is the LE Connection Complete subevent.
-	hciSubeventLEConnectionComplete = 0x01
 
 	// aclHeaderBytes is the length and handle prefix of an ACL data packet:
 	// a two-byte handle and a two-byte data total length.
@@ -57,27 +55,6 @@ func parseCommandStatus(packet []byte) (opcode uint16, status uint8, ok bool) {
 		return 0, 0, false
 	}
 	return binary.LittleEndian.Uint16(packet[3:5]), packet[2], true
-}
-
-// parseDisconnection decodes a Disconnection Complete event, whose parameters are
-// the status, the handle, and the reason code.
-func parseDisconnection(packet []byte) (handle uint16, status uint8, reason uint8, ok bool) {
-	if len(packet) < 6 || packet[0] != hciEventDisconnection {
-		return 0, 0, 0, false
-	}
-	return binary.LittleEndian.Uint16(packet[3:5]) & aclHandleMask, packet[2], packet[5], true
-}
-
-// parseLEConnectionComplete decodes an LE Connection Complete event. The handle
-// follows the status, and the peer's address follows the role and address type.
-//
-// The event is only returned as matched when the status is zero, because a
-// non-zero status means no link was created and there is no handle to report.
-func parseLEConnectionComplete(packet []byte) (handle uint16, status uint8, ok bool) {
-	if len(packet) < 6 || packet[0] != hciEventLEMeta || packet[2] != hciSubeventLEConnectionComplete {
-		return 0, 0, false
-	}
-	return binary.LittleEndian.Uint16(packet[4:6]) & aclHandleMask, packet[3], true
 }
 
 // isACLPacket reports whether a raw packet is ACL data. A socket delivers no type
