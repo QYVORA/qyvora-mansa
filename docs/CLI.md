@@ -70,4 +70,4 @@ _No report-tier modules._
 | `mansa test` | Run active-test modules: transmit a bounded, declared frame set at an authorized target |
 | `mansa tui` | start the interactive terminal application |
 | `mansa validate` | Run validation modules: confirm or refute an observed condition from collected data |
-
+| `docs script <file>` | Run a `.qs` script with the shared scripting engine (`run`/`build` subcommands) |
