@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/QYVORA/qyvora-mansa/internal/app"
+	"github.com/QYVORA/qyvora-mansa/internal/banner"
 	errs "github.com/QYVORA/qyvora-mansa/internal/errors"
 	"github.com/QYVORA/qyvora-mansa/internal/exitcode"
 	"github.com/QYVORA/qyvora-mansa/internal/output"
@@ -112,7 +113,7 @@ func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "mansa",
 		Short: "Authorized wireless security assessment framework",
-		Long: `mansa is a terminal-first wireless security assessment framework.
+		Long: banner.Render() + "\n\n  " + banner.Tagline + " — " + version.CompanyName + "\n  " + version.CompanyURL + "\n  Built in " + version.CompanyCity + "\n\n" + `mansa is a terminal-first wireless security assessment framework.
 
 Commands follow the shared tier grammar
 <tool> <tier> <module> [<action>] [target] [flags], where the tier is one
@@ -128,7 +129,7 @@ Authorized use only: assess wireless networks you own or are authorized
 to evaluate.`,
 		Example: `  mansa recon scan --sim
   mansa recon bluetooth scan
-  mansa exploit exploit list
+  mansa exploit list
   mansa report --format markdown
   mansa report findings`,
 		SilenceUsage:  true,
