@@ -5,15 +5,12 @@
 package events
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"encoding/json"
 	"io"
-	"sync"
-	"time"
+
+	shared "github.com/QYVORA/qyvora-events"
 )
 
-const SchemaVersion = "1.0"
+const SchemaVersion = shared.SchemaVersion
 
 // Event names. Shared verbs use the ecosystem spelling exactly.
 const (
@@ -71,75 +68,13 @@ const (
 )
 
 const (
-	LevelInfo    = "info"
-	LevelWarning = "warning"
-	LevelError   = "error"
+	LevelInfo    = shared.LevelInfo
+	LevelWarning = shared.LevelWarning
+	LevelError   = shared.LevelError
 )
 
-// Event is the wire shape of one event line.
-type Event struct {
-	SchemaVersion string         `json:"schema_version"`
-	Timestamp     time.Time      `json:"timestamp"`
-	ExecutionID   string         `json:"execution_id"`
-	Framework     string         `json:"framework"`
-	Level         string         `json:"level"`
-	Event         string         `json:"event"`
-	Data          map[string]any `json:"data,omitempty"`
-}
+type Event = shared.Event
+type Stream = shared.Stream
 
-// Stream writes events as JSONL to w. It is safe for concurrent use.
-type Stream struct {
-	mu          sync.Mutex
-	w           io.Writer
-	executionID string
-}
-
-// NewStream returns a stream bound to a freshly generated execution id.
-func NewStream(w io.Writer) *Stream {
-	return &Stream{w: w, executionID: newExecutionID()}
-}
-
-// ExecutionID returns the unique id for this event stream session.
-func (s *Stream) ExecutionID() string {
-	if s == nil {
-		return ""
-	}
-	return s.executionID
-}
-
-// Emit writes one event. Data may be nil.
-func (s *Stream) Emit(level, name string, data map[string]any) {
-	if s == nil || s.w == nil {
-		return
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	ev := Event{
-		SchemaVersion: SchemaVersion,
-		Timestamp:     time.Now().UTC(),
-		ExecutionID:   s.executionID,
-		Framework:     "mansa",
-		Level:         level,
-		Event:         name,
-		Data:          data,
-	}
-	enc := json.NewEncoder(s.w)
-	_ = enc.Encode(ev)
-}
-
-// Info is a convenience wrapper for level=info.
-func (s *Stream) Info(name string, data map[string]any) { s.Emit(LevelInfo, name, data) }
-
-// Warn is a convenience wrapper for level=warning.
-func (s *Stream) Warn(name string, data map[string]any) { s.Emit(LevelWarning, name, data) }
-
-// Fail is a convenience wrapper for level=error.
-func (s *Stream) Fail(name string, data map[string]any) { s.Emit(LevelError, name, data) }
-
-func newExecutionID() string {
-	var b [16]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return "mansa-" + time.Now().UTC().Format("20060102T150405.000000000")
-	}
-	return hex.EncodeToString(b[:])
-}
+// NewStream returns a stream bound to mansa.
+func NewStream(w io.Writer) *Stream { return shared.NewStream(w, "mansa") }
