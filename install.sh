@@ -79,8 +79,8 @@ QYVORA_MIN_GO="1.26"
 QYVORA_ICON="mansa.png"
 QYVORA_ICO="mansa.ico"
 QYVORA_DESKTOP_NAME="MANSA"
-QYVORA_DESKTOP_COMMENT="Attack Surface Mapping and Network Analysis"
-QYVORA_DESKTOP_KEYWORDS="attack;surface;network;recon;asset;inventory;exposure;mapping"
+QYVORA_DESKTOP_COMMENT="Authorized wireless security assessment and WLAN analysis"
+QYVORA_DESKTOP_KEYWORDS="wireless;wifi;wlan;802.11;access-point;handshake;assessment;security"
 # Ordered probes used to prove the installed binary runs
 QYVORA_VERSION_PROBE="--version version --help"
 # Additional .desktop entry, if the upstream asset ships one

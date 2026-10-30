@@ -68,6 +68,6 @@ or `session.dir` in the config file.
 
 ## Can I contribute?
 
-Yes. See [Contributing](contributing.md).
+Yes. See [Contributing](../CONTRIBUTING.md).
 
 Next: [Troubleshooting](troubleshooting.md).

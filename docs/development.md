@@ -102,4 +102,4 @@ Each capability carries an ID, description, output format, risk level,
 amount of authorization required, and reversibility/state-change flags.
 Keep the contract additive and versioned.
 
-Next: [Contributing](contributing.md).
+Next: [Contributing](../CONTRIBUTING.md).

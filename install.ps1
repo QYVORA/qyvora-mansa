@@ -39,7 +39,7 @@ $SourceBuild = '1'
 $MinGo      = '1.26'
 $IconAsset  = 'mansa.png'
 $IcoAsset   = 'mansa.ico'
-$AppComment = 'Attack Surface Mapping and Network Analysis'
+$AppComment = 'Authorized wireless security assessment and WLAN analysis'
 # The OS/architecture tokens this tool actually publishes prebuilt archives
 # for. A tool that cannot cross-compile (linux-only transports, or cgo that
 # must link on the release runner) declares a subset here, so this installer
