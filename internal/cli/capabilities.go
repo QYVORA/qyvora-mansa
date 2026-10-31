@@ -12,6 +12,16 @@ import (
 	"github.com/QYVORA/qyvora-mansa/pkg/models"
 )
 
+// capabilityDocument is the machine contract shape shared by QYVORA
+// frameworks.
+type capabilityDocument struct {
+	Framework     string              `json:"framework"`
+	Version       string              `json:"version"`
+	OutputFormats []string            `json:"output_formats"`
+	Capabilities  []capabilities.Tool `json:"capabilities"`
+	Commands      []capabilities.Tool `json:"commands"`
+}
+
 func newCapabilitiesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "capabilities",
@@ -62,7 +72,13 @@ func newCapabilitiesCmd() *cobra.Command {
 				return nil
 			}
 			if appState.Printer.Format() != "terminal" {
-				appState.Printer.Print(list)
+				appState.Printer.Print(capabilityDocument{
+					Framework:     version.Framework,
+					Version:       version.GetInfo().Version,
+					OutputFormats: []string{"terminal", "json", "yaml", "markdown", "html"},
+					Capabilities:  list,
+					Commands:      list,
+				})
 				return nil
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Mansa %s — wireless security contract\n\n", version.Version)

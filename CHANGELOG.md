@@ -8,6 +8,15 @@ follows [Semantic Versioning](https://semver.org/) and
 
 ### Changed
 
+- **Event transport** — migrated to `qyvora-events v0.2.0`, the
+  structured event contract used by `qyvora-platform` and
+  `qyvora-intelligence`.
+- **Capability document** — `capabilities -o json|yaml` now returns a
+  framework envelope (`framework`, `version`, `output_formats`,
+  `capabilities`, `commands`) instead of a bare array, matching the shared
+  QYVORA machine contract.
+### Changed
+
 - **WLAN-005 renamed "WPS Advertised" / `low`** — per recorded checklist
   requirement R-005. An AP advertising WPS is a config-weakness condition,
   not proof of exploitability, so the rule name and severity report the

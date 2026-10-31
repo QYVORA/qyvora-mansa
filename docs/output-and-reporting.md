@@ -32,7 +32,7 @@ Example with `jq`:
 ```sh
 mansa analyze -o json | jq '.findings[] | select(.severity == "critical")'
 mansa session -o json | jq '.[0]'
-mansa capabilities -o json | jq '.[] | .id'
+mansa capabilities -o json | jq '.capabilities[] | .id'
 ```
 
 ## Report command
