@@ -25,10 +25,6 @@ version: 2
 
 project_name: mansa
 
-before:
-  hooks:
-    - go mod tidy
-
 builds:
   - id: mansa
     main: .
@@ -39,12 +35,14 @@ builds:
       - arm64
     flags:
       - -trimpath
+      - -buildvcs=false
     ldflags:
       - -s -w
       - -X github.com/QYVORA/qyvora-mansa/internal/version.Version={{ .Version }}
       - -X github.com/QYVORA/qyvora-mansa/internal/version.Commit={{ .FullCommit }}
-      - -X github.com/QYVORA/qyvora-mansa/internal/version.Date={{ .Date }}
+      - -X github.com/QYVORA/qyvora-mansa/internal/version.Date={{ .CommitDate }}
       - -X github.com/QYVORA/qyvora-mansa/internal/version.BuildUser=goreleaser
+    mod_timestamp: '{{ .CommitTimestamp }}'
     env:
       - CGO_ENABLED=0
 

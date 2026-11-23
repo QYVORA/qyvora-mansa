@@ -1,21 +1,20 @@
 # Mansa
 
 > **Authorized wireless security assessment framework.**
-> A terminal-first GUI and CLI for authorized wireless discovery, WLAN
-> security analysis, and evidence-driven reporting.
+> A one-shot CLI for authorized wireless discovery, WLAN security analysis,
+> and evidence-driven reporting.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Overview
 
 Mansa is QYVORA's wireless security assessment framework. It runs as a
-shared terminal-first console **and** a one-shot CLI with identical
-commands, is deterministic and offline-first with `--sim`, enforces an
+one-shot CLI, is deterministic and offline-first with `--sim`, enforces an
 authorization gate for live scope, and produces evidence-backed findings
 with transparent risk scoring.
 
-- **One workflow, two surfaces** — the console commands equal the CLI
-  commands.
+- **One workflow, one surface** — every assessment runs through the one-shot
+  CLI.
 - **Deterministic `--sim`** — fixed dataset exercises every rule, no
   hardware required, CI-ready.
 - **Evidence over opinion** — every finding carries the observations
@@ -48,18 +47,10 @@ Full assessment, no hardware, deterministic:
 mansa assess --sim
 ```
 
-Interactive console (REPL on a real terminal; stdin piping uses a plain line reader):
-
-```sh
-mansa
-use wlan0
-sim on
-scan
-analyze
-findings
-report --format markdown
-exit
-```
+The interactive console is retired and unavailable in this release. The
+per-tool TUI is excluded from builds (`//go:build ignore`) pending the redirect
+of qyvora-tui to the future AI orchestration layer; a bare invocation prints
+CLI usage. Use the one-shot commands above.
 
 Machine-readable output:
 
@@ -369,7 +360,7 @@ whatever a module declares.
 - [Performance](docs/performance.md)
 - [Testing and validation](docs/testing.md)
 - [Structured events](docs/events.md)
-- [Shared TUI integration](docs/tui.md)
+- [Shared TUI integration (retired; excluded from builds)](docs/tui.md)
 - [Installation](docs/installation.md)
 - [Quickstart](docs/quickstart.md)
 - [Authorization](docs/authorization.md)
