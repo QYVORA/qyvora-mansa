@@ -103,12 +103,7 @@ func (a *AppState) resolvePrinter() {
 }
 
 func (a *AppState) resolveBackend() {
-	linux := transport.NewLinux()
-	if linux.Supported() {
-		a.Backend = linux
-		return
-	}
-	a.Backend = transport.New() // simulation fallback
+	a.Backend = newPlatformBackend()
 }
 
 func (a *AppState) resolveEvents() {
