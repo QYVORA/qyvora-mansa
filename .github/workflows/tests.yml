@@ -20,6 +20,17 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Configure private module access
+        env:
+          QYVORA_CI_TOKEN: ${{ secrets.QYVORA_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${QYVORA_CI_TOKEN:-}" ]; then
+            echo "::error::QYVORA_CI_TOKEN repository secret is required to fetch private QYVORA modules; see ci-audit/REPORT.md"
+            exit 1
+          fi
+          git config --global "http.https://github.com/.extraheader" "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$QYVORA_CI_TOKEN" | base64 -w0)"
+          go env -w GOPRIVATE=github.com/QYVORA/*
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
@@ -44,6 +55,17 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Configure private module access
+        env:
+          QYVORA_CI_TOKEN: ${{ secrets.QYVORA_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${QYVORA_CI_TOKEN:-}" ]; then
+            echo "::error::QYVORA_CI_TOKEN repository secret is required to fetch private QYVORA modules; see ci-audit/REPORT.md"
+            exit 1
+          fi
+          git config --global "http.https://github.com/.extraheader" "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$QYVORA_CI_TOKEN" | base64 -w0)"
+          go env -w GOPRIVATE=github.com/QYVORA/*
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
@@ -56,6 +78,17 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Configure private module access
+        env:
+          QYVORA_CI_TOKEN: ${{ secrets.QYVORA_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${QYVORA_CI_TOKEN:-}" ]; then
+            echo "::error::QYVORA_CI_TOKEN repository secret is required to fetch private QYVORA modules; see ci-audit/REPORT.md"
+            exit 1
+          fi
+          git config --global "http.https://github.com/.extraheader" "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$QYVORA_CI_TOKEN" | base64 -w0)"
+          go env -w GOPRIVATE=github.com/QYVORA/*
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
@@ -68,6 +101,17 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - name: Configure private module access
+        env:
+          QYVORA_CI_TOKEN: ${{ secrets.QYVORA_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${QYVORA_CI_TOKEN:-}" ]; then
+            echo "::error::QYVORA_CI_TOKEN repository secret is required to fetch private QYVORA modules; see ci-audit/REPORT.md"
+            exit 1
+          fi
+          git config --global "http.https://github.com/.extraheader" "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$QYVORA_CI_TOKEN" | base64 -w0)"
+          go env -w GOPRIVATE=github.com/QYVORA/*
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
