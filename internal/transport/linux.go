@@ -1,3 +1,5 @@
+//go:build linux
+
 // Package linux implements wireless backend operations on Linux via `iw`.
 // When `iw` is unavailable or the user lacks permissions, capabilities
 // degrade honestly.
