@@ -6,6 +6,10 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+## Readiness
+
+**BETA.** Mansa is an authorized wireless assessment CLI with deterministic simulation, an authorization gate for live scope, and bounded active tests; live radio transports are Linux-only. Implementation exists for exploration/testing but has not received final production-readiness approval. Its owner classification is `BETA` in the [Product Registry](../../../../knowledge/qyvora-docs/07-products/PRODUCT-REGISTRY.md); release tags do not promote it to `AVAILABLE`.
+
 ## Overview
 
 Mansa is QYVORA's wireless security assessment framework. It runs as a
